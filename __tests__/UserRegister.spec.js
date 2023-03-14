@@ -12,47 +12,39 @@ beforeEach(() => {
 });
 
 describe('User Register', () => {
-  it('should register a new user', (done) => {
-    request(app)
-      .post('/api/1.0/users')
-      .send({
-        username: 'matheus_user',
-        email: 'matheus@gmail.com',
-        password: 'matheus123',
-      })
-      .then((res) => {
-        expect(res.status).toBe(200);
-        done();
-      });
+  const createDefaultUser = () => {
+    return request(app).post('/api/users').send({
+      username: 'matheus_user',
+      email: 'matheus@gmail.com',
+      password: 'matheus123'
+    });
+  };
+
+  it('should register a new user', async (done) => {
+    const res = await createDefaultUser();
+    expect(res.status).toBe(200);
+    done();
   });
 
-  it('return success message when registration is valid', (done) => {
-    request(app)
-      .post('/api/1.0/users')
-      .send({
-        username: 'matheus_user',
-        email: 'matheus@gmail.com',
-        password: 'matheus123',
-      })
-      .then((res) => {
-        expect(res.body.message).toBe('User was registered successfully!');
-        done();
-      });
+  it('return success message when registration is valid', async (done) => {
+    const res = await createDefaultUser();
+    expect(res.body.message).toBe('User was registered successfully!');
+    done();
   });
 
-  it('saves the user into the db', (done) => {
-    request(app)
-      .post('/api/1.0/users')
-      .send({
-        username: 'matheus_user',
-        email: 'matheus@gmail.com',
-        password: 'matheus123',
-      })
-      .then(() => {
-        User.findOne({ where: { username: 'matheus_user' } }).then((user) => {
-          expect(user).not.toBeNull();
-          done();
-        });
-      });
+  it('saves the user into the db', async (done) => {
+    await createDefaultUser();
+    User.findOne({ where: { username: 'matheus_user' } }).then((user) => {
+      expect(user).not.toBeNull();
+      done();
+    });
+  });
+
+  it('hashes the password before saving it into the db', async (done) => {
+    await createDefaultUser();
+    User.findOne({ where: { username: 'matheus_user' } }).then((user) => {
+      expect(user.password).not.toBe('matheus123');
+      done();
+    });
   });
 });
