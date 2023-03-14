@@ -4,14 +4,15 @@
   "description": "probably no more stupid than the others social networks :P",
   "main": "app.js",
   "scripts": {
-    "start": "nodemon index",
-    "test": "jest --watch",
+    "start": "NODE_ENV=development nodemon index",
+    "test": "NODE_ENV=test jest --watch",
     "lint": "eslint ."
   },
   "author": "Matheus Rodrigues",
   "license": "GNU",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "config": "^3.3.9",
     "dotenv": "^16.0.3",
     "express": "^4.17.1",
     "sequelize": "^6.29.3",
