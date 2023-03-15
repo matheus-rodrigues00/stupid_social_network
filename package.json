@@ -16,6 +16,9 @@
     "dotenv": "^16.0.3",
     "express": "^4.17.1",
     "express-validator": "^6.15.0",
+    "i18next": "^22.4.11",
+    "i18next-fs-backend": "^2.1.1",
+    "i18next-http-middleware": "^3.3.0",
     "sequelize": "^6.29.3",
     "sqlite3": "^5.1.6"
   },

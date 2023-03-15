@@ -7,47 +7,45 @@ router.post(
   '/api/users',
   check('username')
     .notEmpty()
-    .withMessage('Username is required!')
+    .withMessage('username_null')
     .bail()
     .isLength({ min: 6, max: 32 })
-    .withMessage('Username must have min 4 and max 32 characters!')
+    .withMessage('username_size')
     .bail()
     .custom(async (username) => {
       const user = await UserService.findByUsername(username);
       if (user) {
-        throw new Error('Username already in use!');
+        throw new Error('username_inuse');
       }
     }),
   check('email')
     .notEmpty()
-    .withMessage('Email is required!')
+    .withMessage('email_null')
     .bail()
     .isEmail()
-    .withMessage('Email is not valid!')
+    .withMessage('email_invalid')
     .bail()
     .custom(async (email) => {
       const user = await UserService.findByEmail(email);
       if (user) {
-        throw new Error('Email already in use!');
+        throw new Error('email_inuse');
       }
     }),
   check('password')
     .notEmpty()
-    .withMessage('Password is required!')
+    .withMessage('password_null')
     .bail()
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long!')
+    .withMessage('password_size')
     .bail()
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#\$%\^&\*])/)
-    .withMessage(
-      'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character!'
-    ),
+    .withMessage('password_pattern'),
   async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       const validationErrors = {};
       errors.array().forEach((e) => {
-        validationErrors[e.param] = e.msg;
+        validationErrors[e.param] = req.t(e.msg);
       });
       return res.status(400).send({ validationErrors: validationErrors });
     }

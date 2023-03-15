@@ -1,0 +1,11 @@
+{
+  "username_null": "O nome de usuário é obrigatório!",
+  "username_size": "O nome de usuário deve ter entre 4 e 32 caracteres!",
+  "username_inuse": "O nome de usuário já está em uso!",
+  "email_null": "O e-mail é obrigatório!",
+  "email_invalid": "O e-mail não é válido!",
+  "password_null": "A senha é obrigatória!",
+  "password_size": "A senha deve ter pelo menos 6 caracteres!",
+  "password_pattern": "A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial!",
+  "email_inuse": "O e-mail já está em uso!"
+}
