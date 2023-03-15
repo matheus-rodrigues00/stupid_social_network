@@ -1,36 +1,26 @@
 const express = require('express');
 const router = express.Router();
 const UserService = require('./UserService');
+const { check, validationResult } = require('express-validator');
 
-const validateUsername = (req, res, next) => {
-  if (!req.body.username) {
-    req.validationErrors = {
-      ...req.validationErrors,
-      username: 'Username is required!',
-    };
+router.post(
+  '/api/users',
+  check('password').notEmpty().withMessage('Password is required!'),
+  check('username').notEmpty().withMessage('Username is required!'),
+  check('email').notEmpty().withMessage('Email is required!'),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(errors.array());
+      const validationErrors = {};
+      errors.array().forEach((e) => {
+        validationErrors[e.param] = e.msg;
+      });
+      return res.status(400).send({ validationErrors: validationErrors });
+    }
+    await UserService.save(req.body);
+    return res.send({ message: 'User was registered successfully!' });
   }
-  next();
-};
-
-const validateEmail = (req, res, next) => {
-  if (!req.body.email) {
-    req.validationErrors = {
-      ...req.validationErrors,
-      email: 'Email is required!',
-    };
-  }
-  next();
-};
-
-router.post('/api/users', validateUsername, validateEmail, async (req, res) => {
-  await UserService.save(req.body);
-  if (req.validationErrors) {
-    const response = {
-      validationErrors: req.validationErrors,
-    };
-    return res.status(400).send(response);
-  }
-  return res.send({ message: 'User was registered successfully!' });
-});
+);
 
 module.exports = router;

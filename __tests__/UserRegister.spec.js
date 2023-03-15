@@ -50,8 +50,6 @@ describe('User Register', () => {
     });
   });
 
-  // Now I need to write tests to verify if the user fields are valid
-  // I will write the tests for the username field
   it('should not register a new user if username is null', async (done) => {
     const res = await request(app).post('/api/users').send({
       username: null,
@@ -62,7 +60,6 @@ describe('User Register', () => {
     done();
   });
 
-  // Now I have to test if the email is valid
   it('should not register a new user if email is null', async (done) => {
     const res = await request(app).post('/api/users').send({
       username: 'matheus_user',
@@ -70,13 +67,10 @@ describe('User Register', () => {
       password: 'matheus123',
     });
     expect(res.status).toBe(400);
-
     done();
   });
 
-  // Now test for both
-
-  it('should fail for both invalid, username and email', async (done) => {
+  it('should not register if both email and username are null', async (done) => {
     const res = await request(app).post('/api/users').send({
       username: null,
       email: null,
@@ -85,5 +79,18 @@ describe('User Register', () => {
     expect(res.status).toBe(400);
     expect(Object.keys(res.body.validationErrors).length).toBe(2);
     done();
+  });
+
+  it.each`
+    field         | value
+    ${'username'} | ${'Username is required!'}
+    ${'email'}    | ${'Email is required!'}
+    ${'password'} | ${'Password is required!'}
+  `('should not register a new user if $field is null', async ({ field, value }) => {
+    const c_user = { ...defaultTestUser };
+    c_user[field] = null;
+    const res = await createUser(c_user);
+    console.log(res.body.validationErrors[field]);
+    expect(res.body.validationErrors[field]).toBe(value);
   });
 });
