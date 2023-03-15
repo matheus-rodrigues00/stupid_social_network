@@ -13,6 +13,16 @@ const save = async (req) => {
   User.create(user);
 };
 
+const findByEmail = async (email) => {
+  return User.findOne({ where: { email: email } });
+};
+
+const findByUsername = async (username) => {
+  return User.findOne({ where: { username: username } });
+};
+
 module.exports = {
   save,
+  findByEmail,
+  findByUsername,
 };
