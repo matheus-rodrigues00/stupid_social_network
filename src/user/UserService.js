@@ -7,12 +7,12 @@ const save = async (req) => {
   const user = {
     username,
     email,
-    password: hashedPassword
+    password: hashedPassword,
   };
 
   User.create(user);
 };
 
 module.exports = {
-  save
+  save,
 };
