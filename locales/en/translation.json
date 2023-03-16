@@ -7,5 +7,7 @@
   "password_null": "Password is required!",
   "password_size": "Password must be at least 6 characters long!",
   "password_pattern": "Password must contain at least one uppercase letter, one lowercase letter, one number and one special character!",
-  "email_inuse": "Email already in use!"
+  "email_inuse": "Email already in use!",
+  "email_sending_failure": "Email sending failed!",
+  "user_created": "User was registered successfully!"
 }

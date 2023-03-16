@@ -2,9 +2,11 @@ const request = require('supertest');
 const app = require('../src/app');
 const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
+const nodemailerStub = require('nodemailer-stub');
+const EmailService = require('../src/email/EmailService');
 
 beforeAll(() => {
-  return sequelize.sync({ force: true });
+  return sequelize.sync();
 });
 
 beforeEach(() => {
@@ -26,55 +28,47 @@ const createUser = (user = defaultTestUser, config = {}) => {
 };
 
 describe('User Register', () => {
-  it('should register a new user', async (done) => {
+  it('should register a new user', async () => {
     const res = await createUser(defaultTestUser);
     expect(res.status).toBe(200);
-    done();
   });
 
-  it('return success message when registration is valid', async (done) => {
+  it('return success message when registration is valid', async () => {
     const res = await createUser(defaultTestUser);
     expect(res.body.message).toBe('User was registered successfully!');
-    done();
   });
 
-  it('saves the user into the db', async (done) => {
+  it('saves the user into the db', async () => {
     await createUser(defaultTestUser);
-    User.findOne({ where: { username: 'matheus_user' } }).then((user) => {
-      expect(user).not.toBeNull();
-      done();
-    });
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(user).not.toBeNull();
   });
 
-  it('hashes the password before saving it into the db', async (done) => {
+  it('hashes the password before saving it into the db', async () => {
     await createUser(defaultTestUser);
-    User.findOne({ where: { username: 'matheus_user' } }).then((user) => {
-      expect(user.password).not.toBe('#Abc1234');
-      done();
-    });
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(user.password).not.toBe('#Abc1234');
   });
 
-  it('should not register a new user if username is null', async (done) => {
+  it('should not register a new user if username is null', async () => {
     const res = await request(app).post('/api/users').send({
       username: null,
       email: 'matheus@gmail.com',
       password: '#Abc1234',
     });
     expect(res.status).toBe(400);
-    done();
   });
 
-  it('should not register a new user if email is null', async (done) => {
+  it('should not register a new user if email is null', async () => {
     const res = await request(app).post('/api/users').send({
       username: 'matheus_user',
       email: null,
       password: '#Abc1234',
     });
     expect(res.status).toBe(400);
-    done();
   });
 
-  it('should not register if both email and username are null', async (done) => {
+  it('should not register if both email and username are null', async () => {
     const res = await request(app).post('/api/users').send({
       username: null,
       email: null,
@@ -82,7 +76,6 @@ describe('User Register', () => {
     });
     expect(res.status).toBe(400);
     expect(Object.keys(res.body.validationErrors).length).toBe(2);
-    done();
   });
 
   const error_messages = {
@@ -95,6 +88,7 @@ describe('User Register', () => {
     password_pattern:
       'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character!',
     email_inuse: 'Email is already in use!',
+    email_sending_failure: 'Email sending failed!',
   };
 
   it.each`
@@ -121,39 +115,61 @@ describe('User Register', () => {
     expect(res.body.validationErrors[field]).toBe(expectedMessage);
   });
 
-  it('should not register a new user if email is already in use', async (done) => {
+  it('should not register a new user if email is already in use', async () => {
     await createUser(defaultTestUser);
     const res = await createUser(defaultTestUser);
     expect(res.body.validationErrors.email).toBe('Email already in use!');
-    done();
   });
 
-  it('should not register a new user if username is already in use', async (done) => {
+  it('should not register a new user if username is already in use', async () => {
     await createUser(defaultTestUser);
     const res = await createUser(defaultTestUser);
     expect(res.body.validationErrors.username).toBe('Username already in use!');
-    done();
   });
 
-  it('should create a new user in inactive mode', async (done) => {
+  it('should create a new user in inactive mode', async () => {
     await createUser(defaultTestUser);
     const user = await User.findOne({ where: { username: defaultTestUser.username } });
     expect(user.is_active).toBe(false);
-    done();
   });
 
-  it('should create a new user in inactive mode even when is_active is set to true in the request body', async (done) => {
+  it('should create a new user in inactive mode even when is_active is set to true in the request body', async () => {
     await createUser({ ...defaultTestUser, is_active: true });
     const user = await User.findOne({ where: { username: defaultTestUser.username } });
     expect(user.is_active).toBe(false);
-    done();
   });
 
-  it('should create a new user with an activation token', async (done) => {
+  it('should create a new user with an activation token', async () => {
     await createUser(defaultTestUser);
     const user = await User.findOne({ where: { username: defaultTestUser.username } });
     expect(user.activation_token).not.toBe(null);
-    done();
+  });
+
+  it('should send an email with the activation token', async () => {
+    await createUser(defaultTestUser);
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    const lastMail = nodemailerStub.interactsWithMail.lastMail();
+    expect(lastMail.to[0]).toBe(user.email);
+    expect(lastMail.content).toContain(user.activation_token);
+  });
+
+  it('returns 502 Bad Gateway when sending email fails', async () => {
+    const mockSendActivationEmail = jest
+      .spyOn(EmailService, 'sendAccountActivation')
+      .mockRejectedValue({ message: 'Failed to send email' });
+    const res = await createUser(defaultTestUser);
+    expect(res.status).toBe(502);
+    mockSendActivationEmail.mockRestore();
+  });
+
+  it("shouldn't save user in database if sending email fails", async () => {
+    const mockSendActivationEmail = jest
+      .spyOn(EmailService, 'sendAccountActivation')
+      .mockRejectedValue({ message: 'Failed to send email' });
+    await createUser(defaultTestUser);
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(user).toBe(null);
+    mockSendActivationEmail.mockRestore();
   });
 });
 
@@ -168,6 +184,7 @@ describe('Internationalization', () => {
     password_pattern:
       'A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial!',
     email_inuse: 'O e-mail já está em uso!',
+    email_sending_failure: 'Falha ao enviar o e-mail de ativação!',
   };
 
   it.each`
@@ -198,5 +215,15 @@ describe('Internationalization', () => {
     await createUser(defaultTestUser);
     const res = await createUser(defaultTestUser, { lang: 'pt-BR' });
     expect(res.body.validationErrors.email).toBe(international_error_messages.email_inuse);
+  });
+
+  it('should return this error message ${international_error_messages.email_sending_failure} if sending email fails', async () => {
+    const mockSendActivationEmail = jest
+      .spyOn(EmailService, 'sendAccountActivation')
+      .mockRejectedValue({ message: 'Failed to send email' });
+    const res = await createUser(defaultTestUser, { lang: 'pt-BR' });
+    expect(res.body.message).toBe(international_error_messages.email_sending_failure);
+
+    mockSendActivationEmail.mockRestore();
   });
 });

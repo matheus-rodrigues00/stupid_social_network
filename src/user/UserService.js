@@ -1,6 +1,9 @@
 const User = require('./User');
 const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
+const EmailService = require('../email/EmailService');
+const sequelize = require('../config/database');
+const EmailException = require('../email/EmailException');
 
 const save = async (req) => {
   const { username, email, password } = req;
@@ -12,8 +15,15 @@ const save = async (req) => {
     password: hashedPassword,
     activation_token,
   };
-
-  User.create(user);
+  const transaction = await sequelize.transaction();
+  await User.create(user, { transaction });
+  try {
+    await EmailService.sendAccountActivation(email, activation_token);
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw new EmailException();
+  }
 };
 
 const findByEmail = async (email) => {
