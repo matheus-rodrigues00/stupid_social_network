@@ -1,13 +1,16 @@
 const User = require('./User');
 const bcrypt = require('bcryptjs');
+const { v4: uuidv4 } = require('uuid');
 
 const save = async (req) => {
   const { username, email, password } = req;
   const hashedPassword = bcrypt.hashSync(password, 10);
+  const activation_token = uuidv4();
   const user = {
     username,
     email,
     password: hashedPassword,
+    activation_token,
   };
 
   User.create(user);

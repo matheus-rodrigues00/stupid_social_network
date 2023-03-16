@@ -4,7 +4,7 @@ const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
 
 beforeAll(() => {
-  return sequelize.sync();
+  return sequelize.sync({ force: true });
 });
 
 beforeEach(() => {
@@ -132,6 +132,27 @@ describe('User Register', () => {
     await createUser(defaultTestUser);
     const res = await createUser(defaultTestUser);
     expect(res.body.validationErrors.username).toBe('Username already in use!');
+    done();
+  });
+
+  it('should create a new user in inactive mode', async (done) => {
+    await createUser(defaultTestUser);
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(user.is_active).toBe(false);
+    done();
+  });
+
+  it('should create a new user in inactive mode even when is_active is set to true in the request body', async (done) => {
+    await createUser({ ...defaultTestUser, is_active: true });
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(user.is_active).toBe(false);
+    done();
+  });
+
+  it('should create a new user with an activation token', async (done) => {
+    await createUser(defaultTestUser);
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(user.activation_token).not.toBe(null);
     done();
   });
 });

@@ -20,7 +20,8 @@
     "i18next-fs-backend": "^2.1.1",
     "i18next-http-middleware": "^3.3.0",
     "sequelize": "^6.29.3",
-    "sqlite3": "^5.1.6"
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "eslint": "^7.2.0",
