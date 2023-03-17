@@ -2,15 +2,47 @@ const request = require('supertest');
 const app = require('../src/app');
 const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
-const nodemailerStub = require('nodemailer-stub');
-const EmailService = require('../src/email/EmailService');
 
-beforeAll(() => {
-  return sequelize.sync();
+const SMTPServer = require('smtp-server').SMTPServer;
+
+let lastMail,
+  server,
+  simulateSMTPFailure = false;
+
+beforeAll(async () => {
+  jest.setTimeout(60000);
+  // This is necessary because the firsts tests can thrown timeout when the server is not ready yet,
+  // sqlite throws errors when trying to connect to the db for too long.
+  server = new SMTPServer({
+    authOptional: true,
+    onData(stream, session, callback) {
+      let mailBody;
+      stream.on('data', (data) => {
+        mailBody += data.toString();
+      });
+      stream.on('end', () => {
+        if (simulateSMTPFailure) {
+          const error = new Error('Invalid mailbox');
+          error.responseCode = 502;
+          return callback(error);
+        }
+        lastMail = mailBody;
+        callback();
+      });
+    },
+  });
+
+  await server.listen(8587, 'localhost');
+  await sequelize.sync({ force: true });
 });
 
 beforeEach(() => {
+  simulateSMTPFailure = false;
   return User.destroy({ truncate: true });
+});
+
+afterAll(async () => {
+  await server.close();
 });
 
 const defaultTestUser = {
@@ -148,28 +180,21 @@ describe('User Register', () => {
   it('should send an email with the activation token', async () => {
     await createUser(defaultTestUser);
     const user = await User.findOne({ where: { username: defaultTestUser.username } });
-    const lastMail = nodemailerStub.interactsWithMail.lastMail();
-    expect(lastMail.to[0]).toBe(user.email);
-    expect(lastMail.content).toContain(user.activation_token);
+    expect(lastMail).toContain(user.email);
+    expect(lastMail).toContain(user.activation_token);
   });
 
   it('returns 502 Bad Gateway when sending email fails', async () => {
-    const mockSendActivationEmail = jest
-      .spyOn(EmailService, 'sendAccountActivation')
-      .mockRejectedValue({ message: 'Failed to send email' });
+    simulateSMTPFailure = true;
     const res = await createUser(defaultTestUser);
     expect(res.status).toBe(502);
-    mockSendActivationEmail.mockRestore();
   });
 
   it("shouldn't save user in database if sending email fails", async () => {
-    const mockSendActivationEmail = jest
-      .spyOn(EmailService, 'sendAccountActivation')
-      .mockRejectedValue({ message: 'Failed to send email' });
+    simulateSMTPFailure = true;
     await createUser(defaultTestUser);
     const user = await User.findOne({ where: { username: defaultTestUser.username } });
     expect(user).toBe(null);
-    mockSendActivationEmail.mockRestore();
   });
 });
 
@@ -214,16 +239,13 @@ describe('Internationalization', () => {
   it('should return this error message ${international_error_messages.email_inuse} if email is already in use', async () => {
     await createUser(defaultTestUser);
     const res = await createUser(defaultTestUser, { lang: 'pt-BR' });
+    console.debug(res.body);
     expect(res.body.validationErrors.email).toBe(international_error_messages.email_inuse);
   });
 
   it('should return this error message ${international_error_messages.email_sending_failure} if sending email fails', async () => {
-    const mockSendActivationEmail = jest
-      .spyOn(EmailService, 'sendAccountActivation')
-      .mockRejectedValue({ message: 'Failed to send email' });
+    simulateSMTPFailure = true;
     const res = await createUser(defaultTestUser, { lang: 'pt-BR' });
     expect(res.body.message).toBe(international_error_messages.email_sending_failure);
-
-    mockSendActivationEmail.mockRestore();
   });
 });
