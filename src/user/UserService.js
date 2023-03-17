@@ -4,6 +4,7 @@ const { v4: uuidv4 } = require('uuid');
 const EmailService = require('../email/EmailService');
 const sequelize = require('../config/database');
 const EmailException = require('../email/EmailException');
+const InvalidTokenExpection = require('./InvalidTokenExpection');
 
 const save = async (req) => {
   const { username, email, password } = req;
@@ -34,8 +35,19 @@ const findByUsername = async (username) => {
   return User.findOne({ where: { username: username } });
 };
 
+const activate = async (token) => {
+  const user = await User.findOne({ where: { activation_token: token } });
+  if (!user) {
+    throw new InvalidTokenExpection();
+  }
+  user.activation_token = null;
+  user.active = true;
+  await user.save();
+};
+
 module.exports = {
   save,
   findByEmail,
   findByUsername,
+  activate,
 };

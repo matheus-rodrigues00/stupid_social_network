@@ -9,5 +9,7 @@
   "password_pattern": "A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial!",
   "email_inuse": "O e-mail já está em uso!",
   "email_sending_failure": "Falha ao enviar o e-mail de ativação!",
-  "user_created": "Usuário criado com sucesso!"
+  "user_created": "Usuário criado com sucesso!",
+  "account_activation_failure": "Conta já foi ativada ou token inválido.",
+  "account_activation_success": "Conta ativada com sucesso!"
 }

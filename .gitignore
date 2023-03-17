@@ -2,3 +2,4 @@
 .env
 database.sqlite
 test.sqlite
+test.sqlite-journal

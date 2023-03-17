@@ -249,3 +249,56 @@ describe('Internationalization', () => {
     expect(res.body.message).toBe(international_error_messages.email_sending_failure);
   });
 });
+
+const activateUser = async (token, config = {}) => {
+  const agent = request.agent(app).post(`/api/activate/${token}`);
+  if (config.lang) agent.set('Accept-Language', config.lang);
+  return agent;
+};
+describe('Account activation', () => {
+  it('activates when token sent is valid', async () => {
+    await createUser(defaultTestUser);
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    const res = await activateUser(user.activation_token);
+    expect(res.status).toBe(200);
+  });
+  it("removes token from table when it's valid", async () => {
+    await createUser(defaultTestUser);
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await activateUser(user.activation_token);
+    // I'm gonna have to check if the token is null;
+    const userAfterActivation = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(userAfterActivation.activation_token).toBe(null);
+  });
+  it("doesn't activate the user when token is invalid", async () => {
+    await createUser(defaultTestUser);
+    await activateUser('invalid_token');
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(user.is_active).toBeFalsy();
+  });
+  it('returns error when token is invalid', async () => {
+    await createUser(defaultTestUser);
+    const res = await activateUser('invalid_token');
+    expect(res.status).toBe(400);
+  });
+  it.each`
+    lang       | status       | value
+    ${'pt-BR'} | ${'correct'} | ${'Conta ativada com sucesso!'}
+    ${'en'}    | ${'correct'} | ${'Account activated successfuly!'}
+    ${'pt-BR'} | ${'wrong'}   | ${'Conta já foi ativada ou token inválido.'}
+    ${'en'}    | ${'wrong'}   | ${'Account already active or invalid token.'}
+  `('should send correct messages based on internationalization', async ({ lang, status, value }) => {
+    await createUser(defaultTestUser, { lang });
+    let user = await User.findOne({ where: { username: defaultTestUser.username } });
+    let res;
+
+    if (status === 'correct') {
+      res = await activateUser(user.activation_token, { lang });
+      expect(res.body.message).toBe(value);
+      return;
+    } else {
+      res = await activateUser('invalid_token', { lang });
+      expect(res.body.message).toBe(value);
+    }
+  });
+});
