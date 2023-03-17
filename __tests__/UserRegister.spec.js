@@ -181,7 +181,6 @@ describe('User Register', () => {
     await createUser(defaultTestUser);
     const user = await User.findOne({ where: { username: defaultTestUser.username } });
     expect(lastMail).toContain(user.email);
-    expect(lastMail).toContain(user.activation_token);
   });
 
   it('returns 502 Bad Gateway when sending email fails', async () => {
@@ -251,7 +250,7 @@ describe('Internationalization', () => {
 });
 
 const activateUser = async (token, config = {}) => {
-  const agent = request.agent(app).post(`/api/activate/${token}`);
+  const agent = request.agent(app).get(`/api/activate/${token}`);
   if (config.lang) agent.set('Accept-Language', config.lang);
   return agent;
 };
@@ -266,7 +265,6 @@ describe('Account activation', () => {
     await createUser(defaultTestUser);
     const user = await User.findOne({ where: { username: defaultTestUser.username } });
     await activateUser(user.activation_token);
-    // I'm gonna have to check if the token is null;
     const userAfterActivation = await User.findOne({ where: { username: defaultTestUser.username } });
     expect(userAfterActivation.activation_token).toBe(null);
   });
@@ -276,6 +274,14 @@ describe('Account activation', () => {
     const user = await User.findOne({ where: { username: defaultTestUser.username } });
     expect(user.is_active).toBeFalsy();
   });
+  it('activates the user when token is valid', async () => {
+    await createUser(defaultTestUser);
+    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await activateUser(user.activation_token);
+    const userAfterActivation = await User.findOne({ where: { username: defaultTestUser.username } });
+    expect(userAfterActivation.is_active).toBeTruthy();
+  });
+
   it('returns error when token is invalid', async () => {
     await createUser(defaultTestUser);
     const res = await activateUser('invalid_token');

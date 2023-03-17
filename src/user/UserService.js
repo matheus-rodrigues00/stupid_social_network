@@ -41,7 +41,7 @@ const activate = async (token) => {
     throw new InvalidTokenExpection();
   }
   user.activation_token = null;
-  user.active = true;
+  user.is_active = true;
   await user.save();
 };
 
