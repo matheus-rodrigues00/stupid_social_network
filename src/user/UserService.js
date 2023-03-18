@@ -62,10 +62,15 @@ const findAll = async (page = 1, limit = 10) => {
   };
 };
 
+const findById = async (id) => {
+  return User.findOne({ where: { id: id, is_active: true }, attributes: ['id', 'username', 'email'] });
+};
+
 module.exports = {
   save,
   findByEmail,
   findByUsername,
   activate,
   findAll,
+  findById,
 };

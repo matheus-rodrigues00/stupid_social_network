@@ -12,5 +12,6 @@
   "user_created": "Usuário criado com sucesso!",
   "account_activation_failure": "Conta já foi ativada ou token inválido.",
   "account_activation_success": "Conta ativada com sucesso!",
-  "validation_failure": "Falha na validação!"
+  "validation_failure": "Falha na validação!",
+  "user_not_found": "Usuário não encontrado!"
 }

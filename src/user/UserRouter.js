@@ -4,6 +4,7 @@ const UserService = require('./UserService');
 const { check, validationResult } = require('express-validator');
 const ValidationException = require('../error/ValidationExpection');
 const pagination = require('./pagination');
+const UserNotFoundException = require('./UserNotFoundException');
 
 router.post(
   '/api/users',
@@ -70,6 +71,18 @@ router.get('/api/users', pagination, async (req, res, next) => {
     const { page, limit } = req.pagination;
     const users = await UserService.findAll(page, limit);
     return res.send(users);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/api/users/:id', async (req, res, next) => {
+  try {
+    const user = await UserService.findById(req.params.id);
+    if (!user) {
+      throw new UserNotFoundException();
+    }
+    return res.send(user);
   } catch (err) {
     next(err);
   }

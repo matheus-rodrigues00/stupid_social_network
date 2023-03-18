@@ -105,3 +105,55 @@ describe('Listing Users', () => {
     expect(res.body.size).toBe(10);
   });
 });
+
+const getUser = (id, config = {}) => {
+  const agent = request(app).get(`/api/users/${id}`);
+  if (config.language) {
+    agent.set('Accept-Language', config.language);
+  }
+  return agent;
+};
+
+describe('Getting User by Id', () => {
+  it('should return 200 OK when user is found', async () => {
+    await User.create({ ...default_test_user, is_active: true });
+    const user = await User.findOne({ where: { username: default_test_user.username } });
+    const res = await getUser(user.id);
+    expect(res.status).toBe(200);
+  });
+  it('should return 404 NOT FOUND when user is not found', async () => {
+    const res = await request(app).get(`/api/users/123`);
+    expect(res.status).toBe(404);
+  });
+  it('should return a JSON object when user is found', async () => {
+    const user = await User.create({ ...default_test_user, is_active: true });
+    const res = await getUser(user.dataValues.id);
+    expect(res.body).toEqual({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    });
+  });
+  it('It should return error when user is inactive', async () => {
+    const user = await User.create({ ...default_test_user, is_active: false });
+    const res = await getUser(user.dataValues.id);
+    expect(res.status).toBe(404);
+  });
+  it.each`
+    language   | message
+    ${'en'}    | ${'User not found!'}
+    ${'pt-BR'} | ${'Usuário não encontrado!'}
+  `('should return $message when language is $language', async ({ language, message }) => {
+    const res = await getUser('123', { language });
+    // console.log(res.body);
+    expect(res.body.message).toBe(message);
+  });
+  it("should return proper error body when user doesn't exist", async () => {
+    const now = new Date().getTime();
+    const res = await getUser('123');
+    const error = res.body;
+    expect(error.path).toBe('/api/users/123');
+    expect(error.timestamp).toBeGreaterThan(now);
+    expect(Object.keys(error)).toEqual(['path', 'timestamp', 'message', 'validationErrors']);
+  });
+});

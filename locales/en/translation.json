@@ -12,5 +12,6 @@
   "user_created": "User was registered successfully!",
   "account_activation_failure": "Account already active or invalid token.",
   "account_activation_success": "Account activated successfuly!",
-  "validation_failure": "Validation Failure"
+  "validation_failure": "Validation Failure",
+  "user_not_found": "User not found!"
 }
