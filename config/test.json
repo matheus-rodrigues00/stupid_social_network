@@ -4,7 +4,7 @@
     "username": "user",
     "password": "password",
     "dialect": "sqlite",
-    "storage": "./test.sqlite",
+    "storage": ":memory:",
     "logging": false
   },
   "mail": {

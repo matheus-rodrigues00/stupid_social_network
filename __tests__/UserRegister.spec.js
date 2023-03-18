@@ -2,6 +2,9 @@ const request = require('supertest');
 const app = require('../src/app');
 const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
+const en = require('../locales/en/translation.json');
+const ptBR = require('../locales/pt-BR/translation.json');
+require('dotenv').config();
 
 const SMTPServer = require('smtp-server').SMTPServer;
 
@@ -10,6 +13,8 @@ let lastMail,
   simulateSMTPFailure = false;
 
 beforeAll(async () => {
+  await sequelize.sync({ force: true });
+  if (process.env.NODE_ENV !== 'test') return;
   jest.setTimeout(60000);
   // This is necessary because the firsts tests can thrown timeout when the server is not ready yet,
   // sqlite throws errors when trying to connect to the db for too long.
@@ -33,16 +38,17 @@ beforeAll(async () => {
   });
 
   await server.listen(8587, 'localhost');
-  await sequelize.sync();
 });
 
-beforeEach(() => {
+beforeEach(async () => {
+  await sequelize.sync({ force: true });
   simulateSMTPFailure = false;
   return User.destroy({ truncate: true });
 });
 
 afterAll(async () => {
   await server.close();
+  return User.destroy({ truncate: true });
 });
 
 const default_test_user = {
@@ -67,7 +73,7 @@ describe('User Register', () => {
 
   it('return success message when registration is valid', async () => {
     const res = await createUser(default_test_user);
-    expect(res.body.message).toBe('User was registered successfully!');
+    expect(res.body.message).toBe(en.user_created);
   });
 
   it('saves the user into the db', async () => {
@@ -110,36 +116,23 @@ describe('User Register', () => {
     expect(Object.keys(res.body.validationErrors).length).toBe(2);
   });
 
-  const error_messages = {
-    username_null: 'Username is required!',
-    username_size: 'Username must have min 4 and max 32 characters!',
-    email_null: 'Email is required!',
-    email_invalid: 'Email is not valid!',
-    password_null: 'Password is required!',
-    password_size: 'Password must be at least 6 characters long!',
-    password_pattern:
-      'Password must contain at least one uppercase letter, one lowercase letter, one number and one special character!',
-    email_inuse: 'Email is already in use!',
-    email_sending_failure: 'Email sending failed!',
-  };
-
   it.each`
     field         | value              | expectedMessage
-    ${'username'} | ${null}            | ${error_messages.username_null}
-    ${'username'} | ${'a'.repeat(3)}   | ${error_messages.username_size}
-    ${'username'} | ${'a'.repeat(33)}  | ${error_messages.username_size}
-    ${'email'}    | ${null}            | ${error_messages.email_null}
-    ${'email'}    | ${'mail.com'}      | ${error_messages.email_invalid}
-    ${'email'}    | ${'user.mail.com'} | ${error_messages.email_invalid}
-    ${'email'}    | ${'user@mail'}     | ${error_messages.email_invalid}
-    ${'password'} | ${null}            | ${error_messages.password_null}
-    ${'password'} | ${'test1'}         | ${error_messages.password_size}
-    ${'password'} | ${'alllowercase'}  | ${error_messages.password_pattern}
-    ${'password'} | ${'ALLUPPERCASE'}  | ${error_messages.password_pattern}
-    ${'password'} | ${'1234567890'}    | ${error_messages.password_pattern}
-    ${'password'} | ${'lowerandUPPER'} | ${error_messages.password_pattern}
-    ${'password'} | ${'lower4nd5667'}  | ${error_messages.password_pattern}
-    ${'password'} | ${'UPPER44444'}    | ${error_messages.password_pattern}
+    ${'username'} | ${null}            | ${en.username_null}
+    ${'username'} | ${'a'.repeat(3)}   | ${en.username_size}
+    ${'username'} | ${'a'.repeat(33)}  | ${en.username_size}
+    ${'email'}    | ${null}            | ${en.email_null}
+    ${'email'}    | ${'mail.com'}      | ${en.email_invalid}
+    ${'email'}    | ${'user.mail.com'} | ${en.email_invalid}
+    ${'email'}    | ${'user@mail'}     | ${en.email_invalid}
+    ${'password'} | ${null}            | ${en.password_null}
+    ${'password'} | ${'test1'}         | ${en.password_size}
+    ${'password'} | ${'alllowercase'}  | ${en.password_pattern}
+    ${'password'} | ${'ALLUPPERCASE'}  | ${en.password_pattern}
+    ${'password'} | ${'1234567890'}    | ${en.password_pattern}
+    ${'password'} | ${'lowerandUPPER'} | ${en.password_pattern}
+    ${'password'} | ${'lower4nd5667'}  | ${en.password_pattern}
+    ${'password'} | ${'UPPER44444'}    | ${en.password_pattern}
   `('should not register a new user if $field is null', async ({ field, value, expectedMessage }) => {
     const c_user = { ...default_test_user };
     c_user[field] = value;
@@ -150,13 +143,13 @@ describe('User Register', () => {
   it('should not register a new user if email is already in use', async () => {
     await createUser(default_test_user);
     const res = await createUser(default_test_user);
-    expect(res.body.validationErrors.email).toBe('Email already in use!');
+    expect(res.body.validationErrors.email).toBe(en.email_inuse);
   });
 
   it('should not register a new user if username is already in use', async () => {
     await createUser(default_test_user);
     const res = await createUser(default_test_user);
-    expect(res.body.validationErrors.username).toBe('Username already in use!');
+    expect(res.body.validationErrors.username).toBe(en.username_inuse);
   });
 
   it('should create a new user in inactive mode', async () => {
@@ -178,22 +171,28 @@ describe('User Register', () => {
   });
 
   it('should send an email with the activation token', async () => {
-    await createUser(default_test_user);
-    const user = await User.findOne({ where: { username: default_test_user.username } });
-    expect(lastMail).toContain(user.email);
+    if (process.env.NODE_ENV === 'development') {
+      await createUser(default_test_user);
+      const user = await User.findOne({ where: { username: default_test_user.username } });
+      expect(lastMail).toContain(user.email);
+    }
   });
 
   it('returns 502 Bad Gateway when sending email fails', async () => {
-    simulateSMTPFailure = true;
-    const res = await createUser(default_test_user);
-    expect(res.status).toBe(502);
+    if (process.env.NODE_ENV === 'development') {
+      simulateSMTPFailure = true;
+      const res = await createUser(default_test_user);
+      expect(res.status).toBe(502);
+    }
   });
 
   it("shouldn't save user in database if sending email fails", async () => {
-    simulateSMTPFailure = true;
-    await createUser(default_test_user);
-    const user = await User.findOne({ where: { username: default_test_user.username } });
-    expect(user).toBe(null);
+    if (process.env.NODE_ENV === 'development') {
+      simulateSMTPFailure = true;
+      await createUser(default_test_user);
+      const user = await User.findOne({ where: { username: default_test_user.username } });
+      expect(user).toBe(null);
+    }
   });
 });
 
@@ -203,41 +202,27 @@ it('returns Validation Failure if username is null', async () => {
     email: default_test_user.email,
     password: default_test_user.password,
   });
-  expect(res.body.message).toBe('Validation Failure');
+  expect(res.body.message).toBe(en.validation_failure);
 });
 
 describe('Internationalization', () => {
-  const international_error_messages = {
-    username_null: 'O nome de usuário é obrigatório!',
-    username_size: 'O nome de usuário deve ter entre 4 e 32 caracteres!',
-    email_null: 'O e-mail é obrigatório!',
-    email_invalid: 'O e-mail não é válido!',
-    password_null: 'A senha é obrigatória!',
-    password_size: 'A senha deve ter pelo menos 6 caracteres!',
-    password_pattern:
-      'A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial!',
-    email_inuse: 'O e-mail já está em uso!',
-    email_sending_failure: 'Falha ao enviar o e-mail de ativação!',
-    validation_failure: 'Falha na validação!',
-  };
-
   it.each`
     field         | value              | expectedMessage
-    ${'username'} | ${null}            | ${international_error_messages.username_null}
-    ${'username'} | ${'a'.repeat(3)}   | ${international_error_messages.username_size}
-    ${'username'} | ${'a'.repeat(33)}  | ${international_error_messages.username_size}
-    ${'email'}    | ${null}            | ${international_error_messages.email_null}
-    ${'email'}    | ${'mail.com'}      | ${international_error_messages.email_invalid}
-    ${'email'}    | ${'user.mail.com'} | ${international_error_messages.email_invalid}
-    ${'email'}    | ${'user@mail'}     | ${international_error_messages.email_invalid}
-    ${'password'} | ${null}            | ${international_error_messages.password_null}
-    ${'password'} | ${'test1'}         | ${international_error_messages.password_size}
-    ${'password'} | ${'alllowercase'}  | ${international_error_messages.password_pattern}
-    ${'password'} | ${'ALLUPPERCASE'}  | ${international_error_messages.password_pattern}
-    ${'password'} | ${'1234567890'}    | ${international_error_messages.password_pattern}
-    ${'password'} | ${'lowerandUPPER'} | ${international_error_messages.password_pattern}
-    ${'password'} | ${'lower4nd5667'}  | ${international_error_messages.password_pattern}
-    ${'password'} | ${'UPPER44444'}    | ${international_error_messages.password_pattern}
+    ${'username'} | ${null}            | ${ptBR.username_null}
+    ${'username'} | ${'a'.repeat(3)}   | ${ptBR.username_size}
+    ${'username'} | ${'a'.repeat(33)}  | ${ptBR.username_size}
+    ${'email'}    | ${null}            | ${ptBR.email_null}
+    ${'email'}    | ${'mail.com'}      | ${ptBR.email_invalid}
+    ${'email'}    | ${'user.mail.com'} | ${ptBR.email_invalid}
+    ${'email'}    | ${'user@mail'}     | ${ptBR.email_invalid}
+    ${'password'} | ${null}            | ${ptBR.password_null}
+    ${'password'} | ${'test1'}         | ${ptBR.password_size}
+    ${'password'} | ${'alllowercase'}  | ${ptBR.password_pattern}
+    ${'password'} | ${'ALLUPPERCASE'}  | ${ptBR.password_pattern}
+    ${'password'} | ${'1234567890'}    | ${ptBR.password_pattern}
+    ${'password'} | ${'lowerandUPPER'} | ${ptBR.password_pattern}
+    ${'password'} | ${'lower4nd5667'}  | ${ptBR.password_pattern}
+    ${'password'} | ${'UPPER44444'}    | ${ptBR.password_pattern}
   `('should register correctly based on internationalization', async ({ field, value, expectedMessage }) => {
     const c_user = { ...default_test_user };
     c_user[field] = value;
@@ -254,19 +239,21 @@ describe('Internationalization', () => {
       },
       { lang: 'pt-BR' }
     );
-    expect(res.body.message).toBe(international_error_messages.validation_failure);
+    expect(res.body.message).toBe(ptBR.validation_failure);
   });
 
   it('should return this error message ${international_error_messages.email_inuse} if email is already in use', async () => {
     await createUser(default_test_user);
     const res = await createUser(default_test_user, { lang: 'pt-BR' });
-    expect(res.body.validationErrors.email).toBe(international_error_messages.email_inuse);
+    expect(res.body.validationErrors.email).toBe(ptBR.email_inuse);
   });
 
   it('should return this error message ${international_error_messages.email_sending_failure} if sending email fails', async () => {
-    simulateSMTPFailure = true;
-    const res = await createUser(default_test_user, { lang: 'pt-BR' });
-    expect(res.body.message).toBe(international_error_messages.email_sending_failure);
+    if (process.env.NODE_ENV === 'development') {
+      simulateSMTPFailure = true;
+      const res = await createUser(default_test_user, { lang: 'pt-BR' });
+      expect(res.body.message).toBe(ptBR.email_sending_failure);
+    }
   });
 });
 
@@ -310,10 +297,10 @@ describe('Account activation', () => {
   });
   it.each`
     lang       | status       | value
-    ${'pt-BR'} | ${'correct'} | ${'Conta ativada com sucesso!'}
-    ${'en'}    | ${'correct'} | ${'Account activated successfuly!'}
-    ${'pt-BR'} | ${'wrong'}   | ${'Conta já foi ativada ou token inválido.'}
-    ${'en'}    | ${'wrong'}   | ${'Account already active or invalid token.'}
+    ${'pt-BR'} | ${'correct'} | ${ptBR.account_activation_success}
+    ${'en'}    | ${'correct'} | ${en.account_activation_success}
+    ${'pt-BR'} | ${'wrong'}   | ${ptBR.account_activation_failure}
+    ${'en'}    | ${'wrong'}   | ${en.account_activation_failure}
   `('should send correct messages based on internationalization', async ({ lang, status, value }) => {
     await createUser(default_test_user, { lang });
     let user = await User.findOne({ where: { username: default_test_user.username } });

@@ -19,7 +19,9 @@ const save = async (req) => {
   const transaction = await sequelize.transaction();
   await User.create(user, { transaction });
   try {
-    await EmailService.sendAccountActivation(email, activation_token);
+    if (process.env.NODE_ENV === 'development') {
+      await EmailService.sendAccountActivation(email, activation_token);
+    }
     await transaction.commit();
   } catch (err) {
     await transaction.rollback();

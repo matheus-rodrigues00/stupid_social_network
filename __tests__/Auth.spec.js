@@ -3,6 +3,8 @@ const app = require('../src/app');
 const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
 const bcrypt = require('bcryptjs');
+const en = require('../locales/en/translation.json');
+const ptBR = require('../locales/pt-BR/translation.json');
 
 beforeAll(async () => {
   await sequelize.sync();
@@ -65,8 +67,8 @@ describe('Example', () => {
 
   it.each`
     lang       | message
-    ${'en'}    | ${'Invalid credentials'}
-    ${'pt-BR'} | ${'Credenciais inválidas'}
+    ${'en'}    | ${en.auth_failed}
+    ${'pt-BR'} | ${ptBR.auth_failed}
   `('should return $message when language is $lang', async ({ lang, message }) => {
     await addUser();
     const res = await authenticateUser({ ...default_test_user, password: 'wrong_password' }, { lang });

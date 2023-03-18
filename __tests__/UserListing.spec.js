@@ -2,13 +2,21 @@ const request = require('supertest');
 const app = require('../src/app');
 const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
+const en = require('../locales/en/translation.json');
+const ptBR = require('../locales/pt-BR/translation.json');
 
 beforeAll(async () => {
-  await sequelize.sync();
+  await sequelize.sync({ force: true });
 });
 
 beforeEach(async () => {
+  await sequelize.sync({ force: true });
   await User.destroy({ truncate: true });
+});
+
+afterAll(async () => {
+  await sequelize.sync({ force: true });
+  return User.destroy({ truncate: true });
 });
 
 const getUsers = () => {
@@ -141,11 +149,10 @@ describe('Getting User by Id', () => {
   });
   it.each`
     language   | message
-    ${'en'}    | ${'User not found!'}
-    ${'pt-BR'} | ${'Usuário não encontrado!'}
+    ${'en'}    | ${en.user_not_found}
+    ${'pt-BR'} | ${ptBR.user_not_found}
   `('should return $message when language is $language', async ({ language, message }) => {
     const res = await getUser('123', { language });
-    // console.log(res.body);
     expect(res.body.message).toBe(message);
   });
   it("should return proper error body when user doesn't exist", async () => {
