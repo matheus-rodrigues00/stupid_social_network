@@ -48,13 +48,18 @@ const activate = async (token) => {
 const findAll = async (page = 1, limit = 10) => {
   const offset = (page - 1) * limit;
   // filter alos by active users
-  const users = await User.findAll({
+  const users = await User.findAndCountAll({
     offset,
     limit,
     where: { is_active: true },
     attributes: { exclude: ['password', 'activation_token'] },
   });
-  return users;
+  return {
+    content: users.rows,
+    page: page,
+    size: limit,
+    total_pages: Math.ceil(users.count / limit),
+  };
 };
 
 module.exports = {

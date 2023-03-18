@@ -3,6 +3,7 @@ const router = express.Router();
 const UserService = require('./UserService');
 const { check, validationResult } = require('express-validator');
 const ValidationException = require('../error/ValidationExpection');
+const pagination = require('./pagination');
 
 router.post(
   '/api/users',
@@ -64,17 +65,11 @@ router.get('/api/activate/:token', async (req, res, next) => {
   }
 });
 
-router.get('/api/users', async (req, res, next) => {
+router.get('/api/users', pagination, async (req, res, next) => {
   try {
-    const page = req.query.page || 0;
-    const limit = req.query.size || 10;
+    const { page, limit } = req.pagination;
     const users = await UserService.findAll(page, limit);
-    return res.send({
-      content: users,
-      page: 0,
-      size: 10,
-      total_pages: 0,
-    });
+    return res.send(users);
   } catch (err) {
     next(err);
   }
