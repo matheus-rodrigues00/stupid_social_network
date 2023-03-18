@@ -33,7 +33,7 @@ beforeAll(async () => {
   });
 
   await server.listen(8587, 'localhost');
-  await sequelize.sync({ force: true });
+  await sequelize.sync();
 });
 
 beforeEach(() => {
@@ -197,6 +197,15 @@ describe('User Register', () => {
   });
 });
 
+it('returns Validation Failure if username is null', async () => {
+  const res = await createUser({
+    username: null,
+    email: defaultTestUser.email,
+    password: defaultTestUser.password,
+  });
+  expect(res.body.message).toBe('Validation Failure');
+});
+
 describe('Internationalization', () => {
   const international_error_messages = {
     username_null: 'O nome de usuário é obrigatório!',
@@ -209,6 +218,7 @@ describe('Internationalization', () => {
       'A senha deve conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial!',
     email_inuse: 'O e-mail já está em uso!',
     email_sending_failure: 'Falha ao enviar o e-mail de ativação!',
+    validation_failure: 'Falha na validação!',
   };
 
   it.each`
@@ -235,10 +245,21 @@ describe('Internationalization', () => {
     expect(res.body.validationErrors[field]).toBe(expectedMessage);
   });
 
+  it('returns ${international_error_messages.validation_failure} if username is null', async () => {
+    const res = await createUser(
+      {
+        username: null,
+        email: defaultTestUser.email,
+        password: defaultTestUser.password,
+      },
+      { lang: 'pt-BR' }
+    );
+    expect(res.body.message).toBe(international_error_messages.validation_failure);
+  });
+
   it('should return this error message ${international_error_messages.email_inuse} if email is already in use', async () => {
     await createUser(defaultTestUser);
     const res = await createUser(defaultTestUser, { lang: 'pt-BR' });
-    console.debug(res.body);
     expect(res.body.validationErrors.email).toBe(international_error_messages.email_inuse);
   });
 
@@ -306,5 +327,33 @@ describe('Account activation', () => {
       res = await activateUser('invalid_token', { lang });
       expect(res.body.message).toBe(value);
     }
+  });
+});
+
+describe('Error Model', () => {
+  it('returns path, timestamp, message and validationErrors in the response body', async () => {
+    const res = await activateUser('invalid_token');
+    expect(res.body).toHaveProperty('path');
+    expect(res.body).toHaveProperty('timestamp');
+    expect(res.body).toHaveProperty('message');
+    expect(res.body).toHaveProperty('validationErrors');
+  });
+  it('returns path, timestamp and message when request fails', async () => {
+    // token invalid
+    const res = await activateUser('invalid_token');
+    expect(res.body).toHaveProperty('path');
+    expect(res.body).toHaveProperty('timestamp');
+    expect(res.body).toHaveProperty('message');
+  });
+  it('returns correct path in error body', async () => {
+    const res = await activateUser('invalid_token');
+    expect(res.body.path).toBe('/api/activate/invalid_token');
+  });
+  it('returns timestamp in milliseconds within the last 5 seconds when request fails', async () => {
+    const now = new Date().getTime();
+    const five_seconds_later = now + 5000;
+    const res = await activateUser('invalid_token');
+    expect(res.body.timestamp).toBeLessThanOrEqual(five_seconds_later);
+    expect(res.body.timestamp).toBeGreaterThanOrEqual(now);
   });
 });

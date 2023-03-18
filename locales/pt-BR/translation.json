@@ -11,5 +11,6 @@
   "email_sending_failure": "Falha ao enviar o e-mail de ativação!",
   "user_created": "Usuário criado com sucesso!",
   "account_activation_failure": "Conta já foi ativada ou token inválido.",
-  "account_activation_success": "Conta ativada com sucesso!"
+  "account_activation_success": "Conta ativada com sucesso!",
+  "validation_failure": "Falha na validação!"
 }

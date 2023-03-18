@@ -11,5 +11,6 @@
   "email_sending_failure": "Email sending failed!",
   "user_created": "User was registered successfully!",
   "account_activation_failure": "Account already active or invalid token.",
-  "account_activation_success": "Account activated successfuly!"
+  "account_activation_success": "Account activated successfuly!",
+  "validation_failure": "Validation Failure"
 }
