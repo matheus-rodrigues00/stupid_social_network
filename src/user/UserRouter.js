@@ -51,7 +51,6 @@ router.post(
       return res.send({ message: req.t('user_created') });
     } catch (err) {
       return next(err);
-      // return res.status(502).send({ message: req.t(err.message) });
     }
   }
 );
@@ -60,6 +59,22 @@ router.get('/api/activate/:token', async (req, res, next) => {
   try {
     await UserService.activate(req.params.token);
     return res.send({ message: req.t('account_activation_success') });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/api/users', async (req, res, next) => {
+  try {
+    const page = req.query.page || 0;
+    const limit = req.query.size || 10;
+    const users = await UserService.findAll(page, limit);
+    return res.send({
+      content: users,
+      page: 0,
+      size: 10,
+      total_pages: 0,
+    });
   } catch (err) {
     next(err);
   }

@@ -45,13 +45,13 @@ afterAll(async () => {
   await server.close();
 });
 
-const defaultTestUser = {
+const default_test_user = {
   username: 'matheus_user',
   email: 'matheus@gmail.com',
   password: '#Abc1234',
 };
 
-const createUser = (user = defaultTestUser, config = {}) => {
+const createUser = (user = default_test_user, config = {}) => {
   const agent = request(app).post('/api/users');
   if (config.lang) {
     agent.set('Accept-Language', config.lang);
@@ -61,24 +61,24 @@ const createUser = (user = defaultTestUser, config = {}) => {
 
 describe('User Register', () => {
   it('should register a new user', async () => {
-    const res = await createUser(defaultTestUser);
+    const res = await createUser(default_test_user);
     expect(res.status).toBe(200);
   });
 
   it('return success message when registration is valid', async () => {
-    const res = await createUser(defaultTestUser);
+    const res = await createUser(default_test_user);
     expect(res.body.message).toBe('User was registered successfully!');
   });
 
   it('saves the user into the db', async () => {
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     expect(user).not.toBeNull();
   });
 
   it('hashes the password before saving it into the db', async () => {
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     expect(user.password).not.toBe('#Abc1234');
   });
 
@@ -141,58 +141,58 @@ describe('User Register', () => {
     ${'password'} | ${'lower4nd5667'}  | ${error_messages.password_pattern}
     ${'password'} | ${'UPPER44444'}    | ${error_messages.password_pattern}
   `('should not register a new user if $field is null', async ({ field, value, expectedMessage }) => {
-    const c_user = { ...defaultTestUser };
+    const c_user = { ...default_test_user };
     c_user[field] = value;
     const res = await createUser(c_user);
     expect(res.body.validationErrors[field]).toBe(expectedMessage);
   });
 
   it('should not register a new user if email is already in use', async () => {
-    await createUser(defaultTestUser);
-    const res = await createUser(defaultTestUser);
+    await createUser(default_test_user);
+    const res = await createUser(default_test_user);
     expect(res.body.validationErrors.email).toBe('Email already in use!');
   });
 
   it('should not register a new user if username is already in use', async () => {
-    await createUser(defaultTestUser);
-    const res = await createUser(defaultTestUser);
+    await createUser(default_test_user);
+    const res = await createUser(default_test_user);
     expect(res.body.validationErrors.username).toBe('Username already in use!');
   });
 
   it('should create a new user in inactive mode', async () => {
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     expect(user.is_active).toBe(false);
   });
 
   it('should create a new user in inactive mode even when is_active is set to true in the request body', async () => {
-    await createUser({ ...defaultTestUser, is_active: true });
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser({ ...default_test_user, is_active: true });
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     expect(user.is_active).toBe(false);
   });
 
   it('should create a new user with an activation token', async () => {
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     expect(user.activation_token).not.toBe(null);
   });
 
   it('should send an email with the activation token', async () => {
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     expect(lastMail).toContain(user.email);
   });
 
   it('returns 502 Bad Gateway when sending email fails', async () => {
     simulateSMTPFailure = true;
-    const res = await createUser(defaultTestUser);
+    const res = await createUser(default_test_user);
     expect(res.status).toBe(502);
   });
 
   it("shouldn't save user in database if sending email fails", async () => {
     simulateSMTPFailure = true;
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     expect(user).toBe(null);
   });
 });
@@ -200,8 +200,8 @@ describe('User Register', () => {
 it('returns Validation Failure if username is null', async () => {
   const res = await createUser({
     username: null,
-    email: defaultTestUser.email,
-    password: defaultTestUser.password,
+    email: default_test_user.email,
+    password: default_test_user.password,
   });
   expect(res.body.message).toBe('Validation Failure');
 });
@@ -239,7 +239,7 @@ describe('Internationalization', () => {
     ${'password'} | ${'lower4nd5667'}  | ${international_error_messages.password_pattern}
     ${'password'} | ${'UPPER44444'}    | ${international_error_messages.password_pattern}
   `('should register correctly based on internationalization', async ({ field, value, expectedMessage }) => {
-    const c_user = { ...defaultTestUser };
+    const c_user = { ...default_test_user };
     c_user[field] = value;
     const res = await createUser(c_user, { lang: 'pt-BR' });
     expect(res.body.validationErrors[field]).toBe(expectedMessage);
@@ -249,8 +249,8 @@ describe('Internationalization', () => {
     const res = await createUser(
       {
         username: null,
-        email: defaultTestUser.email,
-        password: defaultTestUser.password,
+        email: default_test_user.email,
+        password: default_test_user.password,
       },
       { lang: 'pt-BR' }
     );
@@ -258,14 +258,14 @@ describe('Internationalization', () => {
   });
 
   it('should return this error message ${international_error_messages.email_inuse} if email is already in use', async () => {
-    await createUser(defaultTestUser);
-    const res = await createUser(defaultTestUser, { lang: 'pt-BR' });
+    await createUser(default_test_user);
+    const res = await createUser(default_test_user, { lang: 'pt-BR' });
     expect(res.body.validationErrors.email).toBe(international_error_messages.email_inuse);
   });
 
   it('should return this error message ${international_error_messages.email_sending_failure} if sending email fails', async () => {
     simulateSMTPFailure = true;
-    const res = await createUser(defaultTestUser, { lang: 'pt-BR' });
+    const res = await createUser(default_test_user, { lang: 'pt-BR' });
     expect(res.body.message).toBe(international_error_messages.email_sending_failure);
   });
 });
@@ -277,34 +277,34 @@ const activateUser = async (token, config = {}) => {
 };
 describe('Account activation', () => {
   it('activates when token sent is valid', async () => {
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     const res = await activateUser(user.activation_token);
     expect(res.status).toBe(200);
   });
   it("removes token from table when it's valid", async () => {
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     await activateUser(user.activation_token);
-    const userAfterActivation = await User.findOne({ where: { username: defaultTestUser.username } });
+    const userAfterActivation = await User.findOne({ where: { username: default_test_user.username } });
     expect(userAfterActivation.activation_token).toBe(null);
   });
   it("doesn't activate the user when token is invalid", async () => {
-    await createUser(defaultTestUser);
+    await createUser(default_test_user);
     await activateUser('invalid_token');
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     expect(user.is_active).toBeFalsy();
   });
   it('activates the user when token is valid', async () => {
-    await createUser(defaultTestUser);
-    const user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
     await activateUser(user.activation_token);
-    const userAfterActivation = await User.findOne({ where: { username: defaultTestUser.username } });
+    const userAfterActivation = await User.findOne({ where: { username: default_test_user.username } });
     expect(userAfterActivation.is_active).toBeTruthy();
   });
 
   it('returns error when token is invalid', async () => {
-    await createUser(defaultTestUser);
+    await createUser(default_test_user);
     const res = await activateUser('invalid_token');
     expect(res.status).toBe(400);
   });
@@ -315,8 +315,8 @@ describe('Account activation', () => {
     ${'pt-BR'} | ${'wrong'}   | ${'Conta já foi ativada ou token inválido.'}
     ${'en'}    | ${'wrong'}   | ${'Account already active or invalid token.'}
   `('should send correct messages based on internationalization', async ({ lang, status, value }) => {
-    await createUser(defaultTestUser, { lang });
-    let user = await User.findOne({ where: { username: defaultTestUser.username } });
+    await createUser(default_test_user, { lang });
+    let user = await User.findOne({ where: { username: default_test_user.username } });
     let res;
 
     if (status === 'correct') {

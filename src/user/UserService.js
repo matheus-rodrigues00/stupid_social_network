@@ -45,9 +45,22 @@ const activate = async (token) => {
   await user.save();
 };
 
+const findAll = async (page = 1, limit = 10) => {
+  const offset = (page - 1) * limit;
+  // filter alos by active users
+  const users = await User.findAll({
+    offset,
+    limit,
+    where: { is_active: true },
+    attributes: { exclude: ['password', 'activation_token'] },
+  });
+  return users;
+};
+
 module.exports = {
   save,
   findByEmail,
   findByUsername,
   activate,
+  findAll,
 };
