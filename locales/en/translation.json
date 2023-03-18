@@ -13,5 +13,6 @@
   "account_activation_failure": "Account already active or invalid token.",
   "account_activation_success": "Account activated successfuly!",
   "validation_failure": "Validation Failure",
-  "user_not_found": "User not found!"
+  "user_not_found": "User not found!",
+  "auth_failed": "Invalid credentials"
 }
