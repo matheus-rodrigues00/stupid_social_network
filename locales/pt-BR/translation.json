@@ -14,5 +14,7 @@
   "account_activation_success": "Conta ativada com sucesso!",
   "validation_failure": "Falha na validação!",
   "user_not_found": "Usuário não encontrado!",
-  "auth_failed": "Credenciais inválidas"
+  "auth_failed": "Credenciais inválidas",
+  "forbidden": "Você não está autorizado a acessar este recurso!",
+  "forbidden_update": "Você não está autorizado a atualizar este recurso!"
 }

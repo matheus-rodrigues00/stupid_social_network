@@ -5,6 +5,7 @@ const EmailService = require('../email/EmailService');
 const sequelize = require('../config/database');
 const EmailException = require('../email/EmailException');
 const InvalidTokenExpection = require('./InvalidTokenExpection');
+const ForbiddenException = require('../error/ForbiddenException');
 
 const save = async (req) => {
   const { username, email, password } = req;
@@ -49,7 +50,6 @@ const activate = async (token) => {
 
 const findAll = async (page = 1, limit = 10) => {
   const offset = (page - 1) * limit;
-  // filter alos by active users
   const users = await User.findAndCountAll({
     offset,
     limit,
@@ -68,6 +68,12 @@ const findById = async (id) => {
   return User.findOne({ where: { id: id, is_active: true }, attributes: ['id', 'username', 'email'] });
 };
 
+const update = async (id, req) => {
+  const user = await User.findOne({ where: { id: id } });
+  user.username = req.username;
+  await user.save();
+};
+
 module.exports = {
   save,
   findByEmail,
@@ -75,4 +81,5 @@ module.exports = {
   activate,
   findAll,
   findById,
+  update,
 };

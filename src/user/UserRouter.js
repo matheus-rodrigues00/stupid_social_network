@@ -5,6 +5,8 @@ const { check, validationResult } = require('express-validator');
 const ValidationException = require('../error/ValidationExpection');
 const pagination = require('./pagination');
 const UserNotFoundException = require('./UserNotFoundException');
+const ForbiddenException = require('../error/ForbiddenException');
+const basicAuth = require('../middleware/basicAuth');
 
 router.post(
   '/api/users',
@@ -86,6 +88,16 @@ router.get('/api/users/:id', async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+});
+
+router.put('/api/users/:id', basicAuth, async (req, res, next) => {
+  const authenticated_user = req.authenticatedUser;
+
+  if (!authenticated_user || authenticated_user.id != req.params.id) {
+    return next(new ForbiddenException('forbidden_update'));
+  }
+  await UserService.update(req.params.id, req.body);
+  return res.send();
 });
 
 module.exports = router;
