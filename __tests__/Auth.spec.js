@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app = require('../src/app');
 const User = require('../src/user/User');
+const Token = require('../src/auth/Token');
 const sequelize = require('../src/config/database');
 const bcrypt = require('bcryptjs');
 const en = require('../locales/en/translation.json');
@@ -33,6 +34,12 @@ const authenticateUser = async (credentials, config = {}) => {
     agent.set('Accept-Language', config.lang);
   }
   return await agent.send(credentials);
+};
+
+const logoutUser = async (token) => {
+  const agent = request(app).post('/api/auth/logout');
+  agent.set('Authorization', `Bearer ${token}`);
+  return await agent.send();
 };
 
 describe('Authentication', () => {
@@ -84,5 +91,35 @@ describe('Authentication', () => {
       username: user.username,
       token: expect.any(String),
     });
+  });
+});
+
+describe('Logout', () => {
+  it('should return 200 when token is valid', async () => {
+    const user = await addUser();
+    const res = await authenticateUser({ ...default_test_user });
+    const token = res.body.token;
+    const logout_res = await logoutUser(token);
+    expect(logout_res.status).toBe(200);
+  });
+
+  it('should remove token from database when token is valid', async () => {
+    const user = await addUser();
+    const res = await authenticateUser({ ...default_test_user });
+    const token = res.body.token;
+    const db_token_before = await Token.findOne({ where: { token: token } });
+    expect(db_token_before).not.toBeNull();
+    await logoutUser(token);
+    const db_token = await Token.findOne({ where: { token } });
+    expect(db_token).toBeNull();
+  });
+
+  it('should return 401 when token is invalid', async () => {
+    const user = await addUser();
+    const res = await authenticateUser({ ...default_test_user });
+    const token = res.body.token;
+    await Token.destroy({ where: { token } });
+    const logout_res = await logoutUser(token);
+    expect(logout_res.status).toBe(401);
   });
 });

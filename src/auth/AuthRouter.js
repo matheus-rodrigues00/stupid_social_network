@@ -35,4 +35,19 @@ router.post('/api/auth', check('email').isEmail(), async (req, res, next) => {
   }
 });
 
+router.post('/api/auth/logout', async (req, res, next) => {
+  const authorization = req.headers.authorization;
+  try {
+    const token = authorization.split(' ')[1];
+    const token_exists = await TokenService.verifyToken(token);
+    if (!token_exists) {
+      return next(new AuthException());
+    }
+    await TokenService.invalidateToken(token);
+    return res.send();
+  } catch (err) {
+    return next(new AuthException());
+  }
+});
+
 module.exports = router;
