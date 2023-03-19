@@ -68,10 +68,11 @@ router.get('/api/activate/:token', async (req, res, next) => {
   }
 });
 
-router.get('/api/users', pagination, async (req, res, next) => {
+router.get('/api/users', basicAuth, pagination, async (req, res, next) => {
   try {
+    const authenticated_user = req.authenticatedUser;
     const { page, limit } = req.pagination;
-    const users = await UserService.findAll(page, limit);
+    const users = await UserService.findAll(page, limit, authenticated_user);
     return res.send(users);
   } catch (err) {
     next(err);

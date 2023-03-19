@@ -4,6 +4,7 @@ const User = require('../src/user/User');
 const sequelize = require('../src/config/database');
 const en = require('../locales/en/translation.json');
 const ptBR = require('../locales/pt-BR/translation.json');
+const bcrypt = require('bcryptjs');
 
 beforeAll(async () => {
   await sequelize.sync({ force: true });
@@ -19,8 +20,14 @@ afterAll(async () => {
   return User.destroy({ truncate: true });
 });
 
-const getUsers = () => {
-  return request(app).get('/api/users');
+const getUsers = (options = {}) => {
+  const agent = request(app).get('/api/users');
+  if (options.auth) {
+    const { email, password } = options.auth;
+    console.log(email, password);
+    agent.auth(email, password);
+  }
+  return agent;
 };
 
 const default_test_user = {
@@ -29,13 +36,15 @@ const default_test_user = {
   password: '#Abc1234',
 };
 
-const addUsers = async (actives, inactives) => {
+const addUsers = async (actives, inactives, hash = false) => {
   for (let i = 0; i < actives; i++) {
     const username = default_test_user.username + i;
+    // hash passwords makes the tests slow as fuck!
+    const hashed_password = hash ? await bcrypt.hash(default_test_user.password, 10) : default_test_user.password;
     await User.create({
       username,
       email: username + '@gmail.com',
-      password: default_test_user.password,
+      password: hashed_password,
       is_active: true,
     });
   }
@@ -85,7 +94,6 @@ describe('Listing Users', () => {
     const res = await getUsers();
     expect(res.body.total_pages).toBe(2);
   });
-  // Now dealing with pagation
   it('should return 2 users on page 2 when there are 12 active users on database', async () => {
     await addUsers(12, 0);
     const res = await getUsers().query({ page: 2, size: 10 });
@@ -111,6 +119,13 @@ describe('Listing Users', () => {
     const res = await getUsers().query({ page: 'abc', size: 'abc' });
     expect(res.body.page).toBe(0);
     expect(res.body.size).toBe(10);
+  });
+  it('should return user page without logged in users when request has valid auth', async () => {
+    await addUsers(11, 0, true);
+    // "matheus_user1@gmail.com"
+    // Has to be the above email 'cause of the random email generation algorithm
+    const res = await getUsers({ auth: { email: 'matheus_user1@gmail.com', password: default_test_user.password } });
+    expect(res.body.total_pages).toBe(1);
   });
 });
 

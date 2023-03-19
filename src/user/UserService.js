@@ -3,9 +3,9 @@ const bcrypt = require('bcryptjs');
 const { v4: uuidv4 } = require('uuid');
 const EmailService = require('../email/EmailService');
 const sequelize = require('../config/database');
+const Sequelize = require('sequelize');
 const EmailException = require('../email/EmailException');
 const InvalidTokenExpection = require('./InvalidTokenExpection');
-const ForbiddenException = require('../error/ForbiddenException');
 
 const save = async (req) => {
   const { username, email, password } = req;
@@ -48,12 +48,18 @@ const activate = async (token) => {
   await user.save();
 };
 
-const findAll = async (page = 1, limit = 10) => {
+const findAll = async (page = 1, limit = 10, authenticated_user) => {
   const offset = (page - 1) * limit;
+  console.log(authenticated_user);
   const users = await User.findAndCountAll({
     offset,
     limit,
-    where: { is_active: true },
+    where: {
+      is_active: true,
+      id: {
+        [Sequelize.Op.not]: authenticated_user ? authenticated_user.dataValues.id : 0,
+      },
+    },
     attributes: { exclude: ['password', 'activation_token'] },
   });
   return {
