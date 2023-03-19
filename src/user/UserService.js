@@ -1,27 +1,26 @@
 const User = require('./User');
 const bcrypt = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
 const EmailService = require('../email/EmailService');
 const sequelize = require('../config/database');
 const Sequelize = require('sequelize');
 const EmailException = require('../email/EmailException');
 const InvalidTokenExpection = require('./InvalidTokenExpection');
+const { randomString } = require('../shared/generator');
 
 const save = async (req) => {
   const { username, email, password } = req;
   const hashedPassword = bcrypt.hashSync(password, 10);
-  const activation_token = uuidv4();
   const user = {
     username,
     email,
     password: hashedPassword,
-    activation_token,
+    activation_token: randomString(16),
   };
   const transaction = await sequelize.transaction();
   await User.create(user, { transaction });
   try {
     if (process.env.NODE_ENV === 'development') {
-      await EmailService.sendAccountActivation(email, activation_token);
+      await EmailService.sendAccountActivation(email, user.activation_token);
     }
     await transaction.commit();
   } catch (err) {

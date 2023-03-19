@@ -24,7 +24,7 @@ router.post('/api/auth', check('email').isEmail(), async (req, res, next) => {
     if (!user.is_active) {
       return next(new ForbiddenException());
     }
-    const token = TokenService.generateToken(user);
+    const token = await TokenService.generateToken(user);
     return res.send({
       id: user.id,
       username: user.username,
