@@ -56,7 +56,7 @@ const findAll = async (page = 1, limit = 10, authenticated_user) => {
     where: {
       is_active: true,
       id: {
-        [Sequelize.Op.not]: authenticated_user ? authenticated_user.dataValues.id : 0,
+        [Sequelize.Op.not]: authenticated_user ? authenticated_user.id : 0,
       },
     },
     attributes: { exclude: ['password', 'activation_token'] },

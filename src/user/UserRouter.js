@@ -7,6 +7,7 @@ const pagination = require('./pagination');
 const UserNotFoundException = require('./UserNotFoundException');
 const ForbiddenException = require('../error/ForbiddenException');
 const basicAuth = require('../middleware/basicAuth');
+const tokenAuth = require('../middleware/tokenAuth');
 
 router.post(
   '/api/users',
@@ -68,7 +69,7 @@ router.get('/api/activate/:token', async (req, res, next) => {
   }
 });
 
-router.get('/api/users', basicAuth, pagination, async (req, res, next) => {
+router.get('/api/users', pagination, tokenAuth, async (req, res, next) => {
   try {
     const authenticated_user = req.authenticatedUser;
     const { page, limit } = req.pagination;
@@ -91,7 +92,7 @@ router.get('/api/users/:id', async (req, res, next) => {
   }
 });
 
-router.put('/api/users/:id', basicAuth, async (req, res, next) => {
+router.put('/api/users/:id', tokenAuth, async (req, res, next) => {
   const authenticated_user = req.authenticatedUser;
 
   if (!authenticated_user || authenticated_user.id != req.params.id) {

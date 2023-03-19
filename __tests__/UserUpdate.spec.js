@@ -21,6 +21,15 @@ const default_test_user = {
   is_active: true,
 };
 
+const auth = async (options = {}) => {
+  let token;
+  if (options.auth) {
+    const res = await request(app).post('/api/auth').send(options.auth);
+    token = res.body.token;
+  }
+  return token;
+};
+
 const addUser = async (user = { ...default_test_user }) => {
   const mock_user = { ...user };
   mock_user.password = await bcrypt.hash(mock_user.password, 10);
@@ -32,9 +41,8 @@ const putUser = (id, body = {}, options = {}) => {
   if (options.lang) {
     agent.set('Accept-Language', options.lang);
   }
-  if (options.auth) {
-    const { email, password } = options.auth;
-    agent.auth(email, password);
+  if (options.token) {
+    agent.set('Authorization', `Bearer ${options.token}`);
   }
   return agent.send(body);
 };
@@ -82,26 +90,36 @@ describe('User Update', () => {
   it("returns 200 when update request is sent with correct information and user's active", async () => {
     await addUser({ ...default_test_user, is_active: true });
     const user = await User.findOne({ where: { email: default_test_user.email } });
-    const valid_update = { username: 'new_username' };
-    const res = await putUser(user.id, valid_update, {
+    const token = await auth({
       auth: {
         email: default_test_user.email,
         password: '#Abc1234',
       },
     });
+    const valid_update = { username: 'new_username' };
+    const res = await putUser(user.id, valid_update, { token });
     expect(res.status).toBe(200);
   });
   it("updates user's username when update request is sent with correct information and user's active", async () => {
     await addUser({ ...default_test_user, email: 'test2@gmail.com', is_active: true });
     const user = await User.findOne({ where: { email: 'test2@gmail.com' } });
     const valid_update = { username: 'new_username' };
-    await putUser(user.id, valid_update, {
+    const token = await auth({
       auth: {
         email: 'test2@gmail.com',
         password: '#Abc1234',
       },
     });
+    await putUser(user.id, valid_update, {
+      token,
+    });
     const in_db_user = await User.findOne({ where: { id: user.id } });
     expect(in_db_user.dataValues.username).toBe(valid_update.username);
+  });
+  it('returns 403 when token is not valid', async () => {
+    await addUser({ ...default_test_user, is_active: true });
+    const user = await User.findOne({ where: { email: default_test_user.email } });
+    const res = await putUser(user.id, { username: 'new_username' }, 'invalid_token');
+    expect(res.status).toBe(403);
   });
 });

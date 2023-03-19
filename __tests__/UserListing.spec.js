@@ -22,9 +22,8 @@ afterAll(async () => {
 
 const getUsers = (options = {}) => {
   const agent = request(app).get('/api/users');
-  if (options.auth) {
-    const { email, password } = options.auth;
-    agent.auth(email, password);
+  if (options.token) {
+    agent.set('Authorization', `Bearer ${options.token}`);
   }
   return agent;
 };
@@ -33,6 +32,15 @@ const default_test_user = {
   username: 'matheus_user',
   email: 'matheus@gmail.com',
   password: '#Abc1234',
+};
+
+const auth = async (options = {}) => {
+  let token;
+  if (options.auth) {
+    const res = await request(app).post('/api/auth').send(options.auth);
+    token = res.body.token;
+  }
+  return token;
 };
 
 const addUsers = async (actives, inactives, hash = false) => {
@@ -123,7 +131,13 @@ describe('Listing Users', () => {
     await addUsers(11, 0, true);
     // "matheus_user1@gmail.com"
     // Has to be the above email 'cause of the random email generation algorithm
-    const res = await getUsers({ auth: { email: 'matheus_user1@gmail.com', password: default_test_user.password } });
+    const token = await auth({
+      auth: {
+        email: 'matheus_user1@gmail.com',
+        password: default_test_user.password,
+      },
+    });
+    const res = await getUsers({ token: token });
     expect(res.body.total_pages).toBe(1);
   });
 });
