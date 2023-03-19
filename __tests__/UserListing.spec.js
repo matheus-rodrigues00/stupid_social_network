@@ -24,7 +24,6 @@ const getUsers = (options = {}) => {
   const agent = request(app).get('/api/users');
   if (options.auth) {
     const { email, password } = options.auth;
-    console.log(email, password);
     agent.auth(email, password);
   }
   return agent;

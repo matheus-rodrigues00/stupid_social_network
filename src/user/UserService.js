@@ -50,7 +50,6 @@ const activate = async (token) => {
 
 const findAll = async (page = 1, limit = 10, authenticated_user) => {
   const offset = (page - 1) * limit;
-  console.log(authenticated_user);
   const users = await User.findAndCountAll({
     offset,
     limit,

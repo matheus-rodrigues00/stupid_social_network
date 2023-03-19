@@ -35,11 +35,7 @@ const authenticateUser = async (credentials, config = {}) => {
   return await agent.send(credentials);
 };
 
-describe('Example', () => {
-  it('should be true', () => {
-    expect(true).toBe(true);
-  });
-
+describe('Authentication', () => {
   it('should return 200 when credentials are valid', async () => {
     await addUser();
     const res = await request(app).post('/api/auth').send({
@@ -78,5 +74,15 @@ describe('Example', () => {
   it("should return 401 when email doesn't exist", async () => {
     const res = await authenticateUser({ ...default_test_user, email: 'invalid_email@mail.com' });
     expect(res.status).toBe(401);
+  });
+
+  it('should return id, username and token when credentials are valid', async () => {
+    const user = await addUser();
+    const res = await authenticateUser({ ...default_test_user });
+    expect(res.body).toEqual({
+      id: user.id,
+      username: user.username,
+      token: expect.any(String),
+    });
   });
 });
