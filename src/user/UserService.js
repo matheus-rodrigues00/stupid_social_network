@@ -78,6 +78,11 @@ const update = async (id, req) => {
   await user.save();
 };
 
+const deleteUser = async (id) => {
+  const user = await User.findOne({ where: { id: id } });
+  await user.destroy();
+};
+
 module.exports = {
   save,
   findByEmail,
@@ -86,4 +91,5 @@ module.exports = {
   findAll,
   findById,
   update,
+  deleteUser,
 };

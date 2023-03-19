@@ -102,4 +102,13 @@ router.put('/api/users/:id', tokenAuth, async (req, res, next) => {
   return res.send();
 });
 
+router.delete('/api/users/:id', tokenAuth, async (req, res, next) => {
+  const authenticated_user = req.authenticatedUser;
+  if (!authenticated_user || authenticated_user.id != req.params.id) {
+    return next(new ForbiddenException('forbidden_delete'));
+  }
+  await UserService.deleteUser(req.params.id);
+  return res.send();
+});
+
 module.exports = router;

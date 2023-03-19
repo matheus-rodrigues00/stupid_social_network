@@ -16,5 +16,6 @@
   "user_not_found": "User not found!",
   "auth_failed": "Invalid credentials",
   "forbidden": "You're not authorized to access this resource",
-  "forbidden_update": "You're not authorized to update this resource"
+  "forbidden_update": "You're not authorized to update this resource",
+  "forbidden_delete": "You're not authorized to delete this resource"
 }
