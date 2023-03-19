@@ -69,7 +69,7 @@ router.get('/api/activate/:token', async (req, res, next) => {
   }
 });
 
-router.get('/api/users', pagination, tokenAuth, async (req, res, next) => {
+router.get('/api/users', pagination, async (req, res, next) => {
   try {
     const authenticated_user = req.authenticatedUser;
     const { page, limit } = req.pagination;
@@ -92,7 +92,7 @@ router.get('/api/users/:id', async (req, res, next) => {
   }
 });
 
-router.put('/api/users/:id', tokenAuth, async (req, res, next) => {
+router.put('/api/users/:id', async (req, res, next) => {
   const authenticated_user = req.authenticatedUser;
 
   if (!authenticated_user || authenticated_user.id != req.params.id) {
@@ -102,7 +102,7 @@ router.put('/api/users/:id', tokenAuth, async (req, res, next) => {
   return res.send();
 });
 
-router.delete('/api/users/:id', tokenAuth, async (req, res, next) => {
+router.delete('/api/users/:id', async (req, res, next) => {
   const authenticated_user = req.authenticatedUser;
   if (!authenticated_user || authenticated_user.id != req.params.id) {
     return next(new ForbiddenException('forbidden_delete'));

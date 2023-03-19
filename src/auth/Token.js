@@ -13,10 +13,14 @@ Token.init(
     user_id: {
       type: Sequelize.INTEGER,
     },
+    last_used_at: {
+      type: Sequelize.DATE,
+    },
   },
   {
     sequelize,
     modelName: 'token',
+    timestamps: false,
   }
 );
 

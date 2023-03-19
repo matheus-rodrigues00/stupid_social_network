@@ -46,6 +46,17 @@ const logoutUser = async (token) => {
   return await agent.send();
 };
 
+const putUser = (id, body = {}, options = {}) => {
+  const agent = request(app).put(`/api/users/${id}`);
+  if (options.lang) {
+    agent.set('Accept-Language', options.lang);
+  }
+  if (options.token) {
+    agent.set('Authorization', `Bearer ${options.token}`);
+  }
+  return agent.send(body);
+};
+
 describe('Authentication', () => {
   it('should return 200 when credentials are valid', async () => {
     await addUser();
@@ -100,7 +111,7 @@ describe('Authentication', () => {
 
 describe('Logout', () => {
   it('should return 200 when token is valid', async () => {
-    const user = await addUser();
+    await addUser();
     const res = await authenticateUser({ ...default_test_user });
     const token = res.body.token;
     const logout_res = await logoutUser(token);
@@ -108,7 +119,7 @@ describe('Logout', () => {
   });
 
   it('should remove token from database when token is valid', async () => {
-    const user = await addUser();
+    await addUser();
     const res = await authenticateUser({ ...default_test_user });
     const token = res.body.token;
     const db_token_before = await Token.findOne({ where: { token: token } });
@@ -119,11 +130,44 @@ describe('Logout', () => {
   });
 
   it('should return 401 when token is invalid', async () => {
-    const user = await addUser();
+    await addUser();
     const res = await authenticateUser({ ...default_test_user });
     const token = res.body.token;
     await Token.destroy({ where: { token } });
     const logout_res = await logoutUser(token);
     expect(logout_res.status).toBe(401);
+  });
+});
+
+describe('Token Expiring', () => {
+  it('returns 403 when token is older than 1 week', async () => {
+    await addUser();
+    const user = await User.findOne({ where: { username: default_test_user.username } });
+    const test_token = 'test_token1';
+    const one_week_ago = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    await Token.create({ token: test_token, user_id: user.user_id, last_used_at: one_week_ago });
+    const put_res = await putUser(user.id, { username: 'new_username' }, { token: test_token });
+    expect(put_res.status).toBe(403);
+  });
+  it('refreshes last_used_at when unexpired token is used', async () => {
+    await addUser();
+    const user = await User.findOne({ where: { username: default_test_user.username } });
+    const test_token = 'test_token2';
+    const four_days_ago = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    await Token.create({ token: test_token, user_id: user.user_id, last_used_at: four_days_ago });
+    await putUser(user.id, { username: 'new_username' }, { token: test_token });
+    const db_token = await Token.findOne({ where: { token: test_token } });
+    expect(db_token.last_used_at.getTime()).toBeGreaterThan(four_days_ago.getTime());
+  });
+  it('refreshes last_used_at when unexpired token is used for unauthenticated endpoint', async () => {
+    await addUser();
+    const user = await User.findOne({ where: { username: default_test_user.username } });
+    const test_token = 'test_token3';
+    const four_days_ago = new Date(Date.now() - 4 * 24 * 60 * 60 * 1000);
+    await Token.create({ token: test_token, user_id: user.user_id, last_used_at: four_days_ago });
+    const right_before = new Date(Date.now() - 1);
+    await putUser(user.id, { username: 'new_username' }, { token: test_token });
+    const db_token = await Token.findOne({ where: { token: test_token } });
+    expect(db_token.last_used_at.getTime()).toBeGreaterThan(right_before.getTime());
   });
 });
