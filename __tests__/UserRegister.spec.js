@@ -43,7 +43,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await sequelize.sync({ force: true });
   simulateSMTPFailure = false;
-  return User.destroy({ truncate: true });
+  return await User.destroy({ truncate: { cascade: true } });
 });
 
 afterAll(async () => {

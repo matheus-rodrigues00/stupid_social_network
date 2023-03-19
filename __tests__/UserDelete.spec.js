@@ -12,7 +12,11 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await User.destroy({ truncate: true });
+  await User.destroy({
+    truncate: {
+      cascade: true,
+    },
+  });
 });
 
 const default_test_user = {
@@ -34,12 +38,6 @@ const authenticateUser = async (credentials, config = {}) => {
     agent.set('Accept-Language', config.lang);
   }
   return await agent.send(credentials);
-};
-
-const logoutUser = async (token) => {
-  const agent = request(app).post('/api/auth/logout');
-  agent.set('Authorization', `Bearer ${token}`);
-  return await agent.send();
 };
 
 const deleteUser = async (id, options = {}) => {
@@ -107,5 +105,21 @@ describe('User Delete', () => {
     await deleteUser(user.id, { token });
     const deleted_user = await User.findOne({ where: { email: default_test_user.email } });
     expect(deleted_user).toBeNull();
+  });
+  it("should delete all user's tokens from database when user is deleted", async () => {
+    await addUser();
+    const user = await User.findOne({ where: { email: default_test_user.email } });
+    let token = null;
+    for (let i = 0; i < 5; i++) {
+      const res = await authenticateUser({
+        email: default_test_user.email,
+        password: default_test_user.password,
+      });
+      if (!token) token = res.body.token;
+    }
+    await deleteUser(user.id, { token: token });
+
+    const tokens_in_db = await Token.findAll({ where: { user_id: user.id } });
+    expect(tokens_in_db.length).toBe(0);
   });
 });

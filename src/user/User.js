@@ -1,6 +1,6 @@
 const Sequelize = require('sequelize');
 const sequelize = require('../config/database');
-
+const Token = require('../auth/Token');
 const Model = Sequelize.Model;
 
 class User extends Model {}
@@ -29,5 +29,7 @@ User.init(
     modelName: 'user',
   }
 );
+
+User.hasMany(Token, { foreignKey: 'user_id' });
 
 module.exports = User;
