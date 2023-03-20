@@ -17,5 +17,7 @@
   "auth_failed": "Credenciais inválidas",
   "forbidden": "Você não está autorizado a acessar este recurso!",
   "forbidden_update": "Você não está autorizado a atualizar este recurso!",
-  "forbidden_delete": "Você não está autorizado a excluir este recurso!"
+  "forbidden_delete": "Você não está autorizado a excluir este recurso!",
+  "email_not_inuse": "O e-mail não está em uso!",
+  "password_reset_email_sent": "E-mail de redefinição de senha enviado com sucesso!"
 }

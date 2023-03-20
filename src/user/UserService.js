@@ -6,6 +6,7 @@ const Sequelize = require('sequelize');
 const EmailException = require('../email/EmailException');
 const InvalidTokenExpection = require('./InvalidTokenExpection');
 const { randomString } = require('../shared/generator');
+const NotFoundException = require('../error/NotFoundException');
 
 const save = async (req) => {
   const { username, email, password } = req;
@@ -19,7 +20,7 @@ const save = async (req) => {
   const transaction = await sequelize.transaction();
   await User.create(user, { transaction });
   try {
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.SMTP_SERVICE_ACTIVE === '1') {
       await EmailService.sendAccountActivation(email, user.activation_token);
     }
     await transaction.commit();
@@ -82,6 +83,14 @@ const deleteUser = async (id) => {
   const user = await User.findOne({ where: { id: id } });
   await user.destroy();
 };
+const sendPasswordResetEmail = async (email) => {
+  const user = await findByEmail(email);
+  if (!user) {
+    throw new NotFoundException('email_not_inuse');
+  }
+  user.password_reset_token = randomString(16);
+  await user.save();
+};
 
 module.exports = {
   save,
@@ -92,4 +101,5 @@ module.exports = {
   findById,
   update,
   deleteUser,
+  sendPasswordResetEmail,
 };

@@ -17,5 +17,7 @@
   "auth_failed": "Invalid credentials",
   "forbidden": "You're not authorized to access this resource",
   "forbidden_update": "You're not authorized to update this resource",
-  "forbidden_delete": "You're not authorized to delete this resource"
+  "forbidden_delete": "You're not authorized to delete this resource",
+  "email_not_inuse": "Email not in use!",
+  "password_reset_email_sent": "Password reset email sent!"
 }

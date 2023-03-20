@@ -6,8 +6,6 @@ const ValidationException = require('../error/ValidationExpection');
 const pagination = require('./pagination');
 const UserNotFoundException = require('./UserNotFoundException');
 const ForbiddenException = require('../error/ForbiddenException');
-const basicAuth = require('../middleware/basicAuth');
-const tokenAuth = require('../middleware/tokenAuth');
 
 router.post(
   '/api/users',
@@ -109,6 +107,19 @@ router.delete('/api/users/:id', async (req, res, next) => {
   }
   await UserService.deleteUser(req.params.id);
   return res.send();
+});
+
+router.post('/api/password-reset', check('email').isEmail().withMessage('email_invalid'), async (req, res, next) => {
+  const errors = validationResult(req);
+  try {
+    if (!errors.isEmpty()) {
+      throw new ValidationException(errors.array());
+    }
+    await UserService.sendPasswordResetEmail(req.body.email);
+    return res.send({ message: req.t('password_reset_email_sent') });
+  } catch (err) {
+    next(err);
+  }
 });
 
 module.exports = router;
