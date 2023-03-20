@@ -37,9 +37,18 @@ const invalidateToken = async (token) => {
   await Token.destroy({ where: { token } });
 };
 
+const clearTokens = async (user_id) => {
+  await Token.destroy({
+    where: {
+      user_id,
+    },
+  });
+};
+
 module.exports = {
   generateToken,
   verifyToken,
   invalidateToken,
   scheduleCleanup,
+  clearTokens,
 };

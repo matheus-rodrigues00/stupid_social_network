@@ -7,6 +7,8 @@ const EmailException = require('../email/EmailException');
 const InvalidTokenExpection = require('./InvalidTokenExpection');
 const { randomString } = require('../shared/generator');
 const NotFoundException = require('../error/NotFoundException');
+const Token = require('../auth/Token');
+const TokenService = require('../auth/TokenService');
 
 const save = async (req) => {
   const { username, email, password } = req;
@@ -92,13 +94,32 @@ const sendPasswordResetEmail = async (email) => {
   user.password_reset_token = randomString(16);
   await user.save({ transaction });
   try {
-    await EmailService.sendPasswordReset(email, user.password_reset_token);
-    console.log('enviou email');
+    if (process.env.SMTP_SERVICE_ACTIVE === '1') {
+      await EmailService.sendPasswordReset(email, user.password_reset_token);
+    }
     await transaction.commit();
   } catch (err) {
     await transaction.rollback();
     throw new EmailException();
   }
+};
+
+const updatePassword = async (token, password) => {
+  const user = await User.findOne({ where: { password_reset_token: token } });
+  if (!user) {
+    throw new InvalidTokenExpection();
+  }
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  user.password = hashedPassword;
+  user.password_reset_token = null;
+  user.is_active = true;
+  user.activation_token = null;
+  await user.save();
+  await TokenService.clearTokens(user.id);
+};
+
+const findByPasswordResetToken = (token) => {
+  return User.findOne({ where: { password_reset_token: token } });
 };
 
 module.exports = {
@@ -111,4 +132,6 @@ module.exports = {
   update,
   deleteUser,
   sendPasswordResetEmail,
+  updatePassword,
+  findByPasswordResetToken,
 };

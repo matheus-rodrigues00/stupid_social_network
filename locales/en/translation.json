@@ -19,5 +19,7 @@
   "forbidden_update": "You're not authorized to update this resource",
   "forbidden_delete": "You're not authorized to delete this resource",
   "email_not_inuse": "Email not in use!",
-  "password_reset_email_sent": "Password reset email sent!"
+  "password_reset_email_sent": "Password reset email sent!",
+  "password_reset_request_success": "Password reset request successful!",
+  "unauthroized_password_reset": "Unauthorized password reset!"
 }

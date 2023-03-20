@@ -6,6 +6,8 @@ const ValidationException = require('../error/ValidationExpection');
 const pagination = require('./pagination');
 const UserNotFoundException = require('./UserNotFoundException');
 const ForbiddenException = require('../error/ForbiddenException');
+const User = require('./User');
+const passwordResetTokenValidator = require('../middleware/passwordResetTokenValidator');
 
 router.post(
   '/api/users',
@@ -121,5 +123,28 @@ router.post('/api/password-reset', check('email').isEmail().withMessage('email_i
     next(err);
   }
 });
+
+router.put(
+  '/api/password-reset',
+  passwordResetTokenValidator,
+  check('password')
+    .notEmpty()
+    .withMessage('password_null')
+    .bail()
+    .isLength({ min: 6 })
+    .withMessage('password_size')
+    .bail()
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
+    .withMessage('password_pattern'),
+  async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('errors', errors.array());
+      return next(new ValidationException(errors.array()));
+    }
+    await UserService.updatePassword(req.body.password_reset_token, req.body.password);
+    res.send();
+  }
+);
 
 module.exports = router;
