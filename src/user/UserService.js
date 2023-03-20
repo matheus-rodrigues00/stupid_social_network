@@ -88,8 +88,17 @@ const sendPasswordResetEmail = async (email) => {
   if (!user) {
     throw new NotFoundException('email_not_inuse');
   }
+  const transaction = await sequelize.transaction();
   user.password_reset_token = randomString(16);
-  await user.save();
+  await user.save({ transaction });
+  try {
+    await EmailService.sendPasswordReset(email, user.password_reset_token);
+    console.log('enviou email');
+    await transaction.commit();
+  } catch (err) {
+    await transaction.rollback();
+    throw new EmailException();
+  }
 };
 
 module.exports = {

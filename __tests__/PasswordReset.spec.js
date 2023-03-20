@@ -4,16 +4,52 @@ const User = require('../src/user/User');
 const en = require('../locales/en/translation.json');
 const ptBR = require('../locales/pt-BR/translation.json');
 const sequelize = require('../src/config/database');
+const SMTPServer = require('smtp-server').SMTPServer;
+// I need to import the test.json
+const test = require('../config/test.json');
+require('dotenv').config();
+
+let lastMail,
+  server,
+  simulateSMTPFailure = false;
+
 beforeAll(async () => {
-  await sequelize.sync();
+  await sequelize.sync({ force: true });
+  if (process.env.NODE_ENV !== 'test') return;
+  server = new SMTPServer({
+    authOptional: true,
+    onData(stream, session, callback) {
+      let mailBody;
+      stream.on('data', (data) => {
+        mailBody += data.toString();
+      });
+      stream.on('end', () => {
+        if (simulateSMTPFailure) {
+          const error = new Error('Invalid mailbox');
+          error.responseCode = 502;
+          return callback(error);
+        }
+        lastMail = mailBody;
+        callback();
+      });
+    },
+  });
+  await server.listen(test.mail.port, 'localhost');
+  jest.setTimeout(60000);
 });
 
 beforeEach(async () => {
+  simulateSMTPFailure = false;
   await User.destroy({
     truncate: {
       cascade: true,
     },
   });
+});
+
+afterAll(async () => {
+  await server.close();
+  jest.setTimeout(10000);
 });
 
 const default_test_user = {
@@ -92,4 +128,31 @@ describe('Password Reset', () => {
       expect(response.body.message).toBe(message);
     }
   );
+});
+
+describe('Email Sending', () => {
+  it('sends a password reset email with password_reset_token', async () => {
+    const user = await addUser();
+    await postPasswordReset(user.email);
+    const user_in_db = await User.findByPk(user.id);
+    expect(lastMail).toContain(user_in_db.password_reset_token);
+    expect(lastMail).toContain(user_in_db.email);
+  });
+  it('returns 502 Bad Gateway when sending email fails', async () => {
+    simulateSMTPFailure = true;
+    const user = await addUser();
+    const response = await postPasswordReset(user.email);
+    expect(response.status).toBe(502);
+  });
+
+  it.each`
+    lang       | message
+    ${'pt-BR'} | ${ptBR.email_sending_failure}
+    ${'en'}    | ${en.email_sending_failure}
+  `('returns $message when lang is set as $lang after e-mail failure', async ({ lang, message }) => {
+    simulateSMTPFailure = true;
+    const user = await addUser();
+    const response = await postPasswordReset(user.email, { lang: lang });
+    expect(response.body.message).toBe(message);
+  });
 });

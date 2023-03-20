@@ -5,7 +5,6 @@ const sequelize = require('../src/config/database');
 const en = require('../locales/en/translation.json');
 const ptBR = require('../locales/pt-BR/translation.json');
 require('dotenv').config();
-
 const SMTPServer = require('smtp-server').SMTPServer;
 
 let lastMail,
