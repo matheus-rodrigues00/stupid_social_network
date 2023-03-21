@@ -26,13 +26,6 @@ const default_test_user = {
   is_active: true,
 };
 
-afterAll(async () => {
-  const files = fs.readdirSync(profile_directory);
-  for (const file of files) {
-    fs.unlinkSync(path.join(profile_directory, file));
-  }
-});
-
 const readFileAsBase64 = () => {
   const file = fs.readFileSync(path.join('.', '__tests__', 'resources', 'test_avatar.png'));
   return Buffer.from(file).toString('base64');
