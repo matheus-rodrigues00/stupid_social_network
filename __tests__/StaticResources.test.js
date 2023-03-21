@@ -22,12 +22,12 @@ describe('Profile Images', () => {
   });
   it('returns 200 when file exists', async () => {
     const stored_file_name = copyFile();
-    const res = await request(app).get(`/api/files/${stored_file_name}`);
+    const res = await request(app).get(`/images/${stored_file_name}`);
     expect(res.status).toBe(200);
   });
   it('returns one year cache-control header when file exists', async () => {
     const stored_file_name = copyFile();
-    const res = await request(app).get(`/api/files/${stored_file_name}`);
+    const res = await request(app).get(`/images/${stored_file_name}`);
     expect(res.header['cache-control']).toBe('public, max-age=31536000');
   });
 });
