@@ -26,6 +26,9 @@ User.init(
     password_reset_token: {
       type: Sequelize.STRING,
     },
+    avatar: {
+      type: Sequelize.STRING,
+    },
   },
   {
     sequelize,

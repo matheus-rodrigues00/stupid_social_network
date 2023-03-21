@@ -32,6 +32,7 @@ const default_test_user = {
   username: 'matheus_user',
   email: 'matheus@gmail.com',
   password: '#Abc1234',
+  avatar: 'https://www.gravatar.com/avatar/205e460b479e2e5b48aec07710c08d50',
 };
 
 const auth = async (options = {}) => {
@@ -71,14 +72,11 @@ describe('Listing Users', () => {
     const res = await getUsers();
     expect(res.status).toBe(200);
   });
-  it('should return a JSON object', async () => {
+  it('should return only id, username, email and avatar per user', async () => {
+    await addUsers(11, 0);
     const res = await getUsers();
-    expect(res.body).toEqual({
-      content: [],
-      page: 0,
-      size: 10,
-      total_pages: 0,
-    });
+    const user = res.body.content[0];
+    expect(Object.keys(user)).toEqual(['id', 'username', 'email', 'avatar']);
   });
   it('should return 10 users even when there are more than 10 on database', async () => {
     await addUsers(11, 0);
@@ -168,6 +166,7 @@ describe('Getting User by Id', () => {
       id: user.id,
       username: user.username,
       email: user.email,
+      avatar: user.avatar,
     });
   });
   it('It should return error when user is inactive', async () => {

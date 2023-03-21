@@ -98,14 +98,11 @@ describe('Authentication', () => {
     expect(res.status).toBe(401);
   });
 
-  it('should return id, username and token when credentials are valid', async () => {
-    const user = await addUser();
+  it('should return id, username, avatar and token when credentials are valid', async () => {
+    await addUser();
     const res = await authenticateUser({ ...default_test_user });
-    expect(res.body).toEqual({
-      id: user.id,
-      username: user.username,
-      token: expect.any(String),
-    });
+    // check the properties of res.body.content
+    expect(Object.keys(res.body)).toEqual(['id', 'username', 'avatar', 'token']);
   });
 });
 

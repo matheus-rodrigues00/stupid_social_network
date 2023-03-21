@@ -28,6 +28,7 @@ router.post('/api/auth', check('email').isEmail(), async (req, res, next) => {
     return res.send({
       id: user.id,
       username: user.username,
+      avatar: user.avatar,
       token,
     });
   } catch (err) {

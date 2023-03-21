@@ -7,6 +7,7 @@ const i18next = require('i18next');
 const Backend = require('i18next-fs-backend');
 const middleware = require('i18next-http-middleware');
 const errorHandler = require('./error/ErrorHandler');
+const FileService = require('./file/FileService');
 
 i18next
   .use(Backend)
@@ -23,6 +24,8 @@ i18next
       lookupHeader: 'accept-language',
     },
   });
+
+FileService.createFolders();
 
 const app = express();
 

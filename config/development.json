@@ -14,5 +14,7 @@
       "user": "taryn31@ethereal.email",
       "pass": "evgQPh54KDpa3nXKP3"
     }
-  }
+  },
+  "upload_dir": "uploads-dev",
+  "profile_dir": "profile"
 }

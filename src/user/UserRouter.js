@@ -98,8 +98,8 @@ router.put('/api/users/:id', async (req, res, next) => {
   if (!authenticated_user || authenticated_user.id != req.params.id) {
     return next(new ForbiddenException('forbidden_update'));
   }
-  await UserService.update(req.params.id, req.body);
-  return res.send();
+  const user = await UserService.update(req.params.id, req.body);
+  return res.send(user);
 });
 
 router.delete('/api/users/:id', async (req, res, next) => {
@@ -139,7 +139,6 @@ router.put(
   async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('errors', errors.array());
       return next(new ValidationException(errors.array()));
     }
     await UserService.updatePassword(req.body.password_reset_token, req.body.password);

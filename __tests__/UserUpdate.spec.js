@@ -5,6 +5,11 @@ const sequelize = require('../src/config/database');
 const bcrypt = require('bcryptjs');
 const en = require('../locales/en/translation.json');
 const ptBR = require('../locales/pt-BR/translation.json');
+const fs = require('fs');
+const path = require('path');
+const config = require('config');
+const { upload_dir, profile_dir } = config;
+const profile_directory = path.join('.', upload_dir, profile_dir);
 
 beforeAll(async () => {
   await sequelize.sync({ force: true });
@@ -19,6 +24,18 @@ const default_test_user = {
   email: 'matheus@gmail.com',
   password: '#Abc1234',
   is_active: true,
+};
+
+afterAll(async () => {
+  const files = fs.readdirSync(profile_directory);
+  for (const file of files) {
+    fs.unlinkSync(path.join(profile_directory, file));
+  }
+});
+
+const readFileAsBase64 = () => {
+  const file = fs.readFileSync(path.join('.', '__tests__', 'resources', 'test_avatar.png'));
+  return Buffer.from(file).toString('base64');
 };
 
 const auth = async (options = {}) => {
@@ -121,5 +138,38 @@ describe('User Update', () => {
     const user = await User.findOne({ where: { email: default_test_user.email } });
     const res = await putUser(user.id, { username: 'new_username' }, 'invalid_token');
     expect(res.status).toBe(403);
+  });
+  it("should save user's avatar when update request is sent with correct information and user's active", async () => {
+    await addUser({ ...default_test_user, is_active: true });
+    const file_base64 = readFileAsBase64();
+    const user = await User.findOne({ where: { email: default_test_user.email } });
+    const valid_update = { username: 'user_updated', avatar: file_base64 };
+    await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+    });
+    const in_db_user = await User.findOne({ where: { id: user.id } });
+    expect(in_db_user.dataValues.avatar).not.toBe(null);
+  });
+  it("should save user avatar when avatar is sent with update request and user's active", async () => {
+    const file_base64 = readFileAsBase64();
+    await addUser({ ...default_test_user, is_active: true });
+    const valid_update = { avatar: file_base64 };
+    const user = await User.findOne({ where: { email: default_test_user.email } });
+    await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+    });
+    const in_db_user = await User.findOne({ where: { id: user.id } });
+    const profile_image_path = path.join(profile_directory, in_db_user.dataValues.avatar);
+    expect(fs.existsSync(profile_image_path)).toBe(true);
   });
 });
