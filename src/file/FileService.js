@@ -17,8 +17,6 @@ const createFolders = () => {
 const saveProfileAvatar = async (avatar) => {
   const filename = randomString(32);
   const filepath = path.join(profile_folder, filename);
-  console.log(filepath);
-  //   console.log(avatar)
   await fs.promises.writeFile(filepath, avatar, 'base64');
   return filename;
 };

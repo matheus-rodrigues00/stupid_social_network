@@ -3,3 +3,5 @@
 database.sqlite
 test.sqlite
 test.sqlite-journal
+*.sqlite
+uploads-*
