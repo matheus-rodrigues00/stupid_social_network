@@ -21,4 +21,9 @@ const saveProfileAvatar = async (avatar) => {
   return filename;
 };
 
-module.exports = { createFolders, saveProfileAvatar };
+const deleteProfileAvatar = async (filename) => {
+  const filepath = path.join(profile_folder, filename);
+  await fs.promises.unlink(filepath);
+};
+
+module.exports = { createFolders, saveProfileAvatar, deleteProfileAvatar };

@@ -165,4 +165,32 @@ describe('User Update', () => {
     const profile_image_path = path.join(profile_directory, in_db_user.dataValues.avatar);
     expect(fs.existsSync(profile_image_path)).toBe(true);
   });
+
+  it("should remove the old avatar when user's avatar is updated", async () => {
+    const file_base64 = readFileAsBase64();
+    await addUser({ ...default_test_user, is_active: true });
+    const valid_update = { avatar: file_base64 };
+    const user = await User.findOne({ where: { email: default_test_user.email } });
+
+    const res = await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+    });
+    const first_image = res.body.avatar;
+    await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+    });
+
+    const profile_image_path = path.join(profile_directory, first_image);
+    expect(fs.existsSync(profile_image_path)).toBe(false);
+  });
 });
