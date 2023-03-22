@@ -98,6 +98,19 @@ router.put('/api/users/:id', async (req, res, next) => {
   if (!authenticated_user || authenticated_user.id != req.params.id) {
     return next(new ForbiddenException('forbidden_update'));
   }
+
+  if (req.body.username) {
+    const new_username = req.body.username;
+    if (new_username.length < 4 || new_username.length > 32) {
+      return next(new ValidationException([{ msg: 'username_size', param: 'username' }]));
+    } else if (await UserService.findByUsername(new_username)) {
+      return next(new ValidationException([{ msg: 'username_inuse', param: 'username' }]));
+    }
+  }
+  const errros = validationResult(req);
+  if (!errros.isEmpty()) {
+    return next(new ValidationException(errros.array()));
+  }
   const user = await UserService.update(req.params.id, req.body);
   return res.send(user);
 });
