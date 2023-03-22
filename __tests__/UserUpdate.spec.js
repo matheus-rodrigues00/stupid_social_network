@@ -219,4 +219,70 @@ describe('User Update', () => {
       expect(res.body.validationErrors.username).toBe(message);
     }
   );
+  it('should returns 200 when image size is exactly 2mb', async () => {
+    const file_with200mb = 'a'.repeat(1024 * 1024 * 2);
+    const base64 = Buffer.from(file_with200mb).toString('base64');
+    const user = await addUser({ ...default_test_user, is_active: true });
+    const valid_update = { image: base64 };
+    const res = await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+    });
+    expect(res.status).toBe(200);
+  });
+  it('should returns 400 when image size exceeds 2mb', async () => {
+    const file_with200mb = 'a'.repeat(1024 * 1024 * 2) + 'a';
+    const base64 = Buffer.from(file_with200mb).toString('base64');
+    const user = await addUser({ ...default_test_user, is_active: true });
+    const valid_update = { avatar: base64 };
+    const res = await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+    });
+    expect(res.status).toBe(400);
+  });
+  it('keeps the old image after user only updates username', async () => {
+    const file_base64 = readFileAsBase64();
+    const user = await addUser({ ...default_test_user, is_active: true, avatar: file_base64 });
+    const valid_update = { username: 'updated-user' };
+    const res = await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+    });
+    const in_db_user = await User.findOne({ where: { id: user.id } });
+    expect(in_db_user.dataValues.avatar).toBe(res.body.avatar);
+  });
+  it.each`
+    lang       | message
+    ${'pt-BR'} | ${ptBR.profile_image_size}
+    ${'en'}    | ${en.profile_image_size}
+  `('returns $message when file size exceeds 2mb when lang is $lang', async ({ lang, message }) => {
+    const file_with200mb = 'a'.repeat(1024 * 1024 * 2) + 'a';
+    const base64 = Buffer.from(file_with200mb).toString('base64');
+    const user = await addUser({ ...default_test_user, is_active: true });
+    const valid_update = { avatar: base64 };
+    const res = await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+      lang,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.validationErrors.avatar).toBe(message);
+  });
 });

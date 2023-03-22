@@ -35,8 +35,8 @@ FileService.createFolders();
 const app = express();
 
 app.use(middleware.handle(i18next));
-app.use(express.json());
 app.use('/images', express.static(profile_folder, { maxAge: 31557600000 }));
+app.use(express.json({ limit: '3mb' }));
 app.use(tokenAuth);
 app.use(UserRouter);
 app.use(AuthRouter);

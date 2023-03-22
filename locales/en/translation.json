@@ -21,5 +21,6 @@
   "email_not_inuse": "Email not in use!",
   "password_reset_email_sent": "Password reset email sent!",
   "password_reset_request_success": "Password reset request successful!",
-  "unauthroized_password_reset": "Unauthorized password reset!"
+  "unauthroized_password_reset": "Unauthorized password reset!",
+  "profile_image_size": "Profile image must be less than 2MB!"
 }
