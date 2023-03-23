@@ -26,9 +26,9 @@ const default_test_user = {
   is_active: true,
 };
 
-const readFileAsBase64 = () => {
-  const file = fs.readFileSync(path.join('.', '__tests__', 'resources', 'test_avatar.png'));
-  return Buffer.from(file).toString('base64');
+const readFileAsBase64 = (file = 'test_avatar.png') => {
+  const file_path = fs.readFileSync(path.join('.', '__tests__', 'resources', file));
+  return Buffer.from(file_path).toString('base64');
 };
 
 const auth = async (options = {}) => {
@@ -235,10 +235,13 @@ describe('User Update', () => {
     expect(res.status).toBe(200);
   });
   it('should returns 400 when image size exceeds 2mb', async () => {
-    const file_with200mb = 'a'.repeat(1024 * 1024 * 2) + 'a';
-    const base64 = Buffer.from(file_with200mb).toString('base64');
+    const test_png = readFileAsBase64();
+    const png_byte = Buffer.from(test_png, 'base64').length;
+    const two_byte = 1024 * 1024 * 2;
+    const filling = 'a'.repeat(two_byte - png_byte);
+    const fill_base_64 = Buffer.from(filling).toString('base64');
     const user = await addUser({ ...default_test_user, is_active: true });
-    const valid_update = { avatar: base64 };
+    const valid_update = { avatar: test_png + fill_base_64 };
     const res = await putUser(user.id, valid_update, {
       token: await auth({
         auth: {
@@ -273,6 +276,52 @@ describe('User Update', () => {
     const base64 = Buffer.from(file_with200mb).toString('base64');
     const user = await addUser({ ...default_test_user, is_active: true });
     const valid_update = { avatar: base64 };
+    const res = await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+      lang,
+    });
+    expect(res.status).toBe(400);
+    expect(res.body.validationErrors.avatar).toBe(message);
+  });
+  it.each`
+    file                 | status
+    ${'test_gif.gif'}    | ${400}
+    ${'test_pdf.pdf'}    | ${400}
+    ${'test_txt.txt'}    | ${400}
+    ${'test_avatar.png'} | ${200}
+    ${'test_avatar.jpg'} | ${200}
+  `('returns $status when uploading $file as image', async ({ file, status }) => {
+    const file_base64 = readFileAsBase64(file);
+    const user = await addUser({ ...default_test_user, is_active: true });
+    const valid_update = { avatar: file_base64 };
+    const res = await putUser(user.id, valid_update, {
+      token: await auth({
+        auth: {
+          email: default_test_user.email,
+          password: default_test_user.password,
+        },
+      }),
+    });
+    expect(res.status).toBe(status);
+  });
+
+  it.each`
+    file              | lang       | message
+    ${'test_gif.gif'} | ${'pt-BR'} | ${ptBR.unsupported_image_type}
+    ${'test_gif.gif'} | ${'en'}    | ${en.unsupported_image_type}
+    ${'test_pdf.pdf'} | ${'pt-BR'} | ${ptBR.unsupported_image_type}
+    ${'test_pdf.pdf'} | ${'en'}    | ${en.unsupported_image_type}
+    ${'test_txt.txt'} | ${'pt-BR'} | ${ptBR.unsupported_image_type}
+    ${'test_txt.txt'} | ${'en'}    | ${en.unsupported_image_type}
+  `('returns $message when uploading $file as image when lang is $lang', async ({ file, lang, message }) => {
+    const file_base64 = readFileAsBase64(file);
+    const user = await addUser({ ...default_test_user, is_active: true });
+    const valid_update = { avatar: file_base64 };
     const res = await putUser(user.id, valid_update, {
       token: await auth({
         auth: {

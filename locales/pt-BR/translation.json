@@ -22,5 +22,6 @@
   "password_reset_email_sent": "E-mail de redefinição de senha enviado com sucesso!",
   "password_reset_request_success": "Solicitação de redefinição de senha enviada com sucesso!",
   "unauthroized_password_reset": "Você não está autorizado a redefinir a senha deste usuário!",
-  "profile_image_size": "A imagem de perfil deve ter no máximo 2MB!"
+  "profile_image_size": "A imagem de perfil deve ter no máximo 2MB!",
+  "unsupported_image_type": "Apenas JPG e PNG são aceitos como formato!"
 }

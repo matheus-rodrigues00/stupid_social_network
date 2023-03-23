@@ -6,8 +6,8 @@ const ValidationException = require('../error/ValidationExpection');
 const pagination = require('./pagination');
 const UserNotFoundException = require('./UserNotFoundException');
 const ForbiddenException = require('../error/ForbiddenException');
-const User = require('./User');
 const passwordResetTokenValidator = require('../middleware/passwordResetTokenValidator');
+const FileService = require('../file/FileService');
 
 router.post(
   '/api/users',
@@ -94,13 +94,17 @@ router.get('/api/users/:id', async (req, res, next) => {
 
 router.put(
   '/api/users/:id',
-  check('avatar').custom((avatar) => {
+  check('avatar').custom(async (avatar) => {
     if (!avatar) {
       return true;
     }
     const buffer = Buffer.from(avatar, 'base64');
-    if (buffer.length > 2 * 1024 * 1024) {
+    const supported_type = await FileService.isSupportedFileType(buffer);
+    if (!FileService.isLessThan2MB(buffer)) {
       throw new Error('profile_image_size');
+    }
+    if (!supported_type) {
+      throw new Error('unsupported_image_type');
     }
     return true;
   }),
