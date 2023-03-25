@@ -1,0 +1,11 @@
+// migrations:
+npm install sequelize-cli
+npx sequelize-cli init
+npx sequelize-cli model:generate --name user --attributes username:string,email:string,password:string
+npx sequelize-cli db:migrate
+npx sequelize-cli db:migrate:undo
+npx sequelize-cli seed:generate --name add-users
+
+// seeds:
+npx sequelize-cli db:seed:all
+npx sequelize-cli db:seed:undo:all

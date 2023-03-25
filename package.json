@@ -26,6 +26,7 @@
     "nodemailer": "^6.9.1",
     "nodemailer-stub": "^1.2.2",
     "sequelize": "^6.29.3",
+    "sequelize-cli": "^6.6.0",
     "smtp-server": "^3.11.0",
     "sqlite3": "^5.1.6",
     "uuid": "^9.0.0"
