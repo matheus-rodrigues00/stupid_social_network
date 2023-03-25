@@ -33,7 +33,6 @@ const isLessThan2MB = (file) => {
 
 const isSupportedFileType = async (buffer) => {
   const type = await FileType.fromBuffer(buffer);
-  console.log(type);
   return !type ? false : type.mime === 'image/jpeg' || type.mime === 'image/png';
 };
 

@@ -14,8 +14,10 @@ let lastMail,
   simulateSMTPFailure = false;
 
 beforeAll(async () => {
-  await sequelize.sync({ force: true });
-  if (process.env.NODE_ENV !== 'test') return;
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync({ force: true });
+  }
+  if (!process.env.SMTP_SERVICE_ACTIVE) return;
   server = new SMTPServer({
     authOptional: true,
     onData(stream, session, callback) {
@@ -48,8 +50,8 @@ beforeEach(async () => {
 });
 
 afterAll(async () => {
-  await server.close();
   jest.setTimeout(10000);
+  await server.close();
 });
 
 const default_test_user = {

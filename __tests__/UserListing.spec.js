@@ -7,7 +7,9 @@ const ptBR = require('../locales/pt-BR/translation.json');
 const bcrypt = require('bcryptjs');
 
 beforeAll(async () => {
-  await sequelize.sync({ force: true });
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync({ force: true });
+  }
 });
 
 beforeEach(async () => {

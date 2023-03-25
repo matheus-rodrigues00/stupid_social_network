@@ -5,6 +5,7 @@ const sequelize = require('../src/config/database');
 const en = require('../locales/en/translation.json');
 const ptBR = require('../locales/pt-BR/translation.json');
 require('dotenv').config();
+const test = require('../config/test.json');
 const SMTPServer = require('smtp-server').SMTPServer;
 
 let lastMail,
@@ -12,8 +13,11 @@ let lastMail,
   simulateSMTPFailure = false;
 
 beforeAll(async () => {
-  await sequelize.sync({ force: true });
-  if (process.env.NODE_ENV !== 'test') return;
+  if (process.env.NODE_ENV === 'test') {
+    await sequelize.sync({ force: true });
+  }
+  if (process.env.SMTP_SERVICE_ACTIVE != 1) return;
+  console.log('Starting SMTP server for testing...');
   jest.setTimeout(60000);
   // This is necessary because the firsts tests can thrown timeout when the server is not ready yet,
   // sqlite throws errors when trying to connect to the db for too long.
@@ -36,7 +40,7 @@ beforeAll(async () => {
     },
   });
 
-  await server.listen(8587, 'localhost');
+  await server.listen(test.mail.port, 'localhost');
 });
 
 beforeEach(async () => {
@@ -170,28 +174,25 @@ describe('User Register', () => {
   });
 
   it('should send an email with the activation token', async () => {
-    if (process.env.NODE_ENV === 'development') {
-      await createUser(default_test_user);
-      const user = await User.findOne({ where: { username: default_test_user.username } });
-      expect(lastMail).toContain(user.email);
-    }
+    if (!process.env.SMTP_SERVICE_ACTIVE) return;
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
+    expect(lastMail).toContain(user.email);
   });
 
   it('returns 502 Bad Gateway when sending email fails', async () => {
-    if (process.env.NODE_ENV === 'development') {
-      simulateSMTPFailure = true;
-      const res = await createUser(default_test_user);
-      expect(res.status).toBe(502);
-    }
+    if (!process.env.SMTP_SERVICE_ACTIVE) return;
+    simulateSMTPFailure = true;
+    const res = await createUser(default_test_user);
+    expect(res.status).toBe(502);
   });
 
   it("shouldn't save user in database if sending email fails", async () => {
-    if (process.env.NODE_ENV === 'development') {
-      simulateSMTPFailure = true;
-      await createUser(default_test_user);
-      const user = await User.findOne({ where: { username: default_test_user.username } });
-      expect(user).toBe(null);
-    }
+    if (!process.env.SMTP_SERVICE_ACTIVE) return;
+    simulateSMTPFailure = true;
+    await createUser(default_test_user);
+    const user = await User.findOne({ where: { username: default_test_user.username } });
+    expect(user).toBe(null);
   });
 });
 

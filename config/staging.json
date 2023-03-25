@@ -1,0 +1,19 @@
+{
+  "database": {
+    "database": "database",
+    "username": "user",
+    "password": "password",
+    "dialect": "sqlite",
+    "storage": "./staging.sqlite",
+    "logging": false
+  },
+  "mail": {
+    "host": "localhost",
+    "port": 7575,
+    "tls": {
+      "rejectUnauthorized": false
+    }
+  },
+  "upload_dir": "uploads-staging",
+  "profile_dir": "profile"
+}

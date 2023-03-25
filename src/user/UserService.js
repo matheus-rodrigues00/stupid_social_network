@@ -23,9 +23,8 @@ const save = async (req) => {
   const transaction = await sequelize.transaction();
   await User.create(user, { transaction });
   try {
-    if (process.env.SMTP_SERVICE_ACTIVE === '1') {
-      await EmailService.sendAccountActivation(email, user.activation_token);
-    }
+    if (process.env.SMTP_SERVICE_ACTIVE != '1') return;
+    await EmailService.sendAccountActivation(email, user.activation_token);
     await transaction.commit();
   } catch (err) {
     await transaction.rollback();
@@ -108,9 +107,8 @@ const sendPasswordResetEmail = async (email) => {
   user.password_reset_token = randomString(16);
   await user.save({ transaction });
   try {
-    if (process.env.SMTP_SERVICE_ACTIVE === '1') {
-      await EmailService.sendPasswordReset(email, user.password_reset_token);
-    }
+    if (process.env.SMTP_SERVICE_ACTIVE != '1') return;
+    await EmailService.sendPasswordReset(email, user.password_reset_token);
     await transaction.commit();
   } catch (err) {
     await transaction.rollback();
