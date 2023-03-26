@@ -1,0 +1,235 @@
+{
+	"info": {
+		"_postman_id": "f164b0cb-51b8-484b-9c88-d49a60d21a27",
+		"name": "Stupid Social Network",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "25898059"
+	},
+	"item": [
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"test_user2\",\n    \"email\": \"postman2@gmail.com\",\n    \"password\": \"#Abc123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{dev_endpoint}}/api/users",
+							"host": [
+								"{{dev_endpoint}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"bearerToken\", jsonData.token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"postman2@gmail.com\",\n    \"password\": \"#Abc123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{dev_endpoint}}/api/auth",
+							"host": [
+								"{{dev_endpoint}}"
+							],
+							"path": [
+								"api",
+								"auth"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Delete",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"postman2@gmail.com\",\n    \"password\": \"#Abc123456\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{dev_endpoint}}/api/users/1",
+							"host": [
+								"{{dev_endpoint}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Users",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{dev_endpoint}}/api/users",
+							"host": [
+								"{{dev_endpoint}}"
+							],
+							"path": [
+								"api",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "User Activation",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "https://ethereal.email/message/ZBST52tzUsNXmb6hZBYMsHP6RWnMh7EoAAAABvMc6WTpCz5TXj04K9l6.wk",
+							"protocol": "https",
+							"host": [
+								"ethereal",
+								"email"
+							],
+							"path": [
+								"message",
+								"ZBST52tzUsNXmb6hZBYMsHP6RWnMh7EoAAAABvMc6WTpCz5TXj04K9l6.wk"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update User",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "#Abc123456",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "postman2@gmail.com",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"big_jhonny\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{dev_endpoint}}/api/users/1",
+							"host": [
+								"{{dev_endpoint}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"1"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{bearerToken}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "dev_endpoint",
+			"value": "http://localhost:3000"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "bearerToken",
+			"value": ""
+		}
+	]
+}

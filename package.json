@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "NODE_ENV=development nodemon index",
-    "test": "NODE_ENV=test jest --watch",
+    "test": "NODE_ENV=test jest --watch --maxWorkers=1",
     "posttest": "cross-env NODE_ENV=test node test-cleanup",
     "lint": "eslint .",
     "test:staging": "cross-env NODE_ENV=staging SMTP_SERVICE_ACTIVE=1 jest . --maxWorkers=1",
