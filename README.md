@@ -4,12 +4,12 @@
 
 ## How To Run Migrations and Seeds
 
-`npm install`
-If you want to test it into production enviroment you can run the test command that will migrate, seed and run the tests:
-`npm run test:staging`
-If you may test in :memory: just run:
-`npm run test`
-If you want the tests to be quick set the SMTP service to false in the .env file.
+- `npm install`
+- If you want to test it into production enviroment you can run the test command that will migrate, seed and run the tests:
+- `npm run test:staging`
+- If you may test in :memory: just run:
+- `npm run test`
+- If you want the tests to be quick set the SMTP service to false in the .env file.
 
 ## How To Test Using Postman
 
